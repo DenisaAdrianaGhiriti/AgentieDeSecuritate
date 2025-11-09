@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -12,8 +13,7 @@ export default function AdminDashboard() {
       <main>
         <h1 className="page-title">Home</h1>
         <div className="cards-container">
-          <div className="card">⚠️<p>Sesizări</p></div>
-          <div className="card">📄<p>Solicitări</p></div>
+          <Link to="/solicitari" className="card link-card">📄<p>Solicitări</p></Link>
           <div className="card">🚨<p>Incidente</p></div>
           <div className="card">👤<p>Angajați</p></div>
           <div className="card">➕<p>Adăugare Angajat</p></div>
