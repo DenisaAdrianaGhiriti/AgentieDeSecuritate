@@ -1,6 +1,6 @@
 .homepage {
   height: calc(100vh - 70px);
-  background: url("/security.jpg") no-repeat center center/cover;
+  background: url("/security.png") no-repeat center center/cover;
   display: flex;
   flex-direction: column; /* Aliniază elementele pe verticală, necesar pentru a le controla individual */
   justify-content: center; /* Menține centrarea verticală, dacă dorești */

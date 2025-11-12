@@ -40,5 +40,35 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println("--- Super Admin a fost creat cu succes! ---");
         }
+
+        // --- Beneficiar (Exemplu) ---
+        String beneficiarEmail = "beneficiar@test.com";
+        if (userRepository.findByEmail(beneficiarEmail).isEmpty()) {
+            User beneficiar = new User();
+            beneficiar.setEmail(beneficiarEmail);
+            beneficiar.setPassword(passwordEncoder.encode("parola123")); // Parola beneficiar
+            beneficiar.setNume("Firma");
+            beneficiar.setPrenume("SRL");
+            beneficiar.setRole(Role.BENEFICIAR);
+            beneficiar.setTelefon("0711111111");
+            beneficiar.setEsteActiv(true);
+            userRepository.save(beneficiar);
+            System.out.println("--- Beneficiar a fost creat cu succes! ---");
+        }
+
+        // --- Paznic (Exemplu) ---
+        String paznicEmail = "paznic@test.com";
+        if (userRepository.findByEmail(paznicEmail).isEmpty()) {
+            User paznic = new User();
+            paznic.setEmail(paznicEmail);
+            paznic.setPassword(passwordEncoder.encode("paznic123")); // Parola paznic
+            paznic.setNume("Vasile");
+            paznic.setPrenume("Gheorghe");
+            paznic.setRole(Role.PAZNIC);
+            paznic.setTelefon("0722222222");
+            paznic.setEsteActiv(true);
+            userRepository.save(paznic);
+            System.out.println("--- Paznic a fost creat cu succes! ---");
+        }
     }
 }

@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import HomePage from './components/HomePage';
-import LoginPage from './components/LoginPage';
-import AdminDashboard from './components/AdminDashboard';
-import Solicitari  from './components/Solicitari';
-import SolicitariDetalii from './components/SolicitariDetalii';
+import AdminDashboard from './admin/AdminDashboard';
+import Header from './admin/Header';
+import HomePage from './admin/HomePage';
+import LoginPage from './admin/LoginPage';
+import Solicitari  from './admin/Solicitari';
+import SolicitariDetalii from './admin/SolicitariDetalii';
+import BeneficiarDashboard from './beneficiar/BeneficiarDashboard';
+import SolicitariB from './beneficiar/SolicitariB';
+import AdaugaSolicitare from './beneficiar/AdaugaSolicitare';
+import PaznicDashboard from './paznic/PaznicDashboard';
 
 function Dashboard({ user, onLogout }) {
   let content;
@@ -17,15 +21,11 @@ function Dashboard({ user, onLogout }) {
     case 'ADMIN':
       content = <AdminDashboard />;
       break;
-    case 'collaborator':
-      content = <h2 style={{ padding: '50px', textAlign: 'center' }}>
-        Bun venit, {user.name}! (Portal Colaborator)
-      </h2>;
+    case 'BENEFICIAR':
+      content = <BeneficiarDashboard />;
       break;
-    case 'guard':
-      content = <h3 style={{ padding: '50px', textAlign: 'center' }}>
-        Bine ai venit, {user.name}! (Portal Paznic)
-      </h3>;
+    case 'PAZNIC':
+      content = <PaznicDashboard />;
       break;
     default:
       content = <p style={{ padding: '50px', textAlign: 'center' }}>
@@ -57,6 +57,8 @@ export default function App() {
       { id: 3, titlu: "Alarmă falsă", data: "12/08/2025", firma: "Firma A", descriere: "Alarma de incendiu a pornit din cauza aburului de la bucătărie.", pasi: "S-a resetat sistemul de alarmă.", dataFinalizare: "12/08/2025" }
     ]
   });
+
+  const [solicitariBeneficiar, setSolicitariBeneficiar] = useState([]);
 
    // La pornirea aplicației, verificăm dacă există user salvat în localStorage
   useEffect(() => {
@@ -95,6 +97,44 @@ export default function App() {
           path="/solicitari/:id" 
           element={<SolicitariDetalii solicitari={solicitari} setSolicitari={setSolicitari} />} 
         />
+               {/* --- BENEFICIAR --- */}
+        <Route 
+          path="/beneficiar" 
+          element={
+            currentUser && currentUser.role === "BENEFICIAR" 
+              ? <BeneficiarDashboard /> 
+              : <p style={{ padding: "50px", textAlign: "center" }}>
+                  Acces interzis.
+                </p>
+          } 
+        />
+        {/* --- ADAUGĂ NOILE RUTE PENTRU SOLICITĂRI BENEFICIAR --- */}
+        <Route
+        path="/solicitariB"
+        element={
+          currentUser && currentUser.role === "BENEFICIAR"
+            // MODIFICAT: Folosim SolicitariB și trimitem doar prop-ul necesar
+            ? <SolicitariB solicitari={solicitariBeneficiar} /> 
+            : <p style={{ padding: "50px", textAlign: "center" }}>
+                Acces interzis.
+              </p>
+        }
+      />
+
+      {/* Ruta pentru adăugarea unei solicitări (rămâne la fel) */}
+      <Route
+        path="/adauga-solicitare"
+        element={
+          currentUser && currentUser.role === "BENEFICIAR"
+          ? <AdaugaSolicitare 
+              setSolicitari={setSolicitariBeneficiar} 
+              currentUser={currentUser} 
+            />
+          : <p style={{ padding: "50px", textAlign: "center" }}>
+              Acces interzis.
+            </p>
+        }
+      />
       </Routes>
     </Router>
   );
