@@ -10,6 +10,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // <-- IMPORT NOU
 
 // IMPORURI EXISTENTE
 import com.securitate.agentie.backend.repository.UserRepository;
@@ -32,26 +33,46 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    // --- MODIFICAREA 1: Injectează și AuthenticationProvider ---
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    CorsConfigurationSource corsConfigurationSource,
-                                                   AuthenticationProvider authenticationProvider) throws Exception {
+                                                   AuthenticationProvider authenticationProvider,
+                                                   JwtAuthenticationFilter jwtAuthFilter) throws Exception { // <-- INJECTĂM FILTRUL
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.disable()) // Folosim sintaxa lambda
+                .csrf(csrf -> csrf.disable())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // --- AICI ÎNCEP REGULILE DE AUTORIZARE (Echivalentul `authorize`) ---
                 .authorizeHttpRequests(auth -> auth
                         // Permite explicit TOATE cererile OPTIONS (pentru CORS preflight)
                         .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
+
                         // Permite explicit TOATE cererile pe /api/auth/
                         .requestMatchers(antMatcher("/api/auth/**")).permitAll()
+
+                        // --- RUTELE NOI (Traduse din Node.js) ---
+
+                        // /api/users
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/users/create")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/list/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/users/create-admin")).hasRole("ADMINISTRATOR")
+
+                        // /api/posts
+                        .requestMatchers(antMatcher("/api/posts/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+
+                        // /api/pontaj
+                        .requestMatchers(antMatcher("/api/pontaj/**")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
+
                         // Toate celelalte necesită autentificare
                         .anyRequest().authenticated()
                 )
-                // --- MODIFICAREA 2: Adaugă provider-ul în lanț ---
-                .authenticationProvider(authenticationProvider);
+                // --- SFÂRȘIT REGULI ---
+
+                .authenticationProvider(authenticationProvider)
+                // --- MODIFICAREA 3: Adaugă filtrul JWT înainte de filtrul de login standard ---
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -1,2 +1,7 @@
-package com.securitate.agentie.backend.model;public class TipRaport {
+package com.securitate.agentie.backend.model;
+
+public enum TipRaport {
+    PONTAJ,
+    INCIDENT,
+    SESIZARE
 }

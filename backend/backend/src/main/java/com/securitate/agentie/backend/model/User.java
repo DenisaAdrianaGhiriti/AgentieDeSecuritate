@@ -8,7 +8,12 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-// Am scos adnotările Lombok (@Data, @Builder, etc.)
+// --- Importuri noi necesare ---
+import jakarta.persistence.Embedded;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
+
 @Entity
 @Table(name = "users")
 public class User implements UserDetails {
@@ -38,6 +43,26 @@ public class User implements UserDetails {
     @Column(columnDefinition = "boolean default true")
     private boolean esteActiv = true;
 
+    // --- CÂMPURI NOI ADĂUGATE (din logica Node.js) ---
+
+    /**
+     * Relație Many-to-One către același tabel (User).
+     * Specifică ce cont de admin a creat acest utilizator.
+     * Este LAZY pentru a nu încărca adminul decât la cerere explicită.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creat_de_admin_id") // Numele coloanei de foreign key în baza de date
+    private User creatDeAdmin;
+
+    /**
+     * Încorporează câmpurile din clasa Profile (nume_firma, cui, nr_legitimatie etc.)
+     * direct în tabelul 'users'.
+     */
+    @Embedded
+    private Profile profile;
+
+    // --- Câmpurile pentru timestamp (rămân neschimbate) ---
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -56,7 +81,8 @@ public class User implements UserDetails {
     public User() {
     }
 
-    // --- Constructor cu toate câmpurile (Opțional, dar util) ---
+    // --- Constructor cu câmpurile de bază (Opțional, dar util) ---
+    // (Nu am adăugat noile câmpuri aici pentru a nu-l complica excesiv)
     public User(String email, String password, Role role, String nume, String prenume, String telefon, boolean esteActiv) {
         this.email = email;
         this.password = password;
@@ -79,8 +105,6 @@ public class User implements UserDetails {
         return this.email;
     }
 
-    // Metoda getPassword() este acum implementată manual (vezi mai jos în getters)
-
     @Override
     public boolean isAccountNonExpired() { return true; }
 
@@ -96,7 +120,6 @@ public class User implements UserDetails {
     }
 
     // --- GETTERS ȘI SETTERS MANUALE ---
-    // (Acesta este codul pe care Lombok îl ascundea)
 
     public Long getId() {
         return id;
@@ -177,5 +200,23 @@ public class User implements UserDetails {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // --- GETTERS ȘI SETTERS PENTRU CÂMPURILE NOI ADĂUGATE ---
+
+    public User getCreatDeAdmin() {
+        return creatDeAdmin;
+    }
+
+    public void setCreatDeAdmin(User creatDeAdmin) {
+        this.creatDeAdmin = creatDeAdmin;
+    }
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
     }
 }

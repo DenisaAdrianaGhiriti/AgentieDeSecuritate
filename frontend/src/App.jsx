@@ -10,6 +10,9 @@ import BeneficiarDashboard from './beneficiar/BeneficiarDashboard';
 import SolicitariB from './beneficiar/SolicitariB';
 import AdaugaSolicitare from './beneficiar/AdaugaSolicitare';
 import PaznicDashboard from './paznic/PaznicDashboard';
+import AdaugaAngajat from "./admin/AdaugaAngajat";
+import AdaugaFirma from "./admin/AdaugaFirma";
+import PontarePage from './paznic/PontarePage';
 
 function Dashboard({ user, onLogout }) {
   let content;
@@ -88,6 +91,18 @@ export default function App() {
         />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
 
+        {/* ✅ Ruta pentru Pontare */}
+        <Route 
+          path="/pontare" 
+          element={
+            currentUser && currentUser.role === "PAZNIC" 
+              ? <PontarePage /> 
+              : <p style={{ padding: "50px", textAlign: "center" }}>
+                  Acces interzis.
+                </p>
+          } 
+        />
+
         <Route 
           path="/solicitari" 
           element={<Solicitari solicitari={solicitari} setSolicitari={setSolicitari} />} 
@@ -98,6 +113,9 @@ export default function App() {
           element={<SolicitariDetalii solicitari={solicitari} setSolicitari={setSolicitari} />} 
         />
                {/* --- BENEFICIAR --- */}
+        
+        <Route path="/adauga-angajat" element={<AdaugaAngajat />} />   {/* ✅ mutat în interiorul Routes */}
+        <Route path="/adauga-firma" element={<AdaugaFirma />} />   {/* ✅ mutat în interiorul Routes */}
         <Route 
           path="/beneficiar" 
           element={

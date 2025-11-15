@@ -1,0 +1,93 @@
+/* ====== Container general ====== */
+.adauga-angajat {
+  max-width: 480px;
+  margin: 60px auto;
+  padding: 30px 35px;
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* ====== Titlu ====== */
+h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #2d2d2d;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* ====== Formular ====== */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ====== Grup input ====== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #444;
+}
+
+.form-input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2d89ef;
+  box-shadow: 0 0 0 3px rgba(45, 137, 239, 0.2);
+}
+
+/* ====== Butoane ====== */
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.save-btn, .back-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+/* ====== Buton salvare ====== */
+.save-btn {
+  background-color: #2d89ef;
+  color: white;
+  box-shadow: 0 3px 6px rgba(45, 137, 239, 0.3);
+}
+
+.save-btn:hover {
+  background-color: #1d5bbf;
+}
+
+/* ====== Buton înapoi ====== */
+.back-btn {
+  background-color: #f2f2f2;
+  color: #333;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.back-btn:hover {
+  background-color: #ddd;
+}
