@@ -13,21 +13,20 @@ public class AtasamentIncident {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_id", nullable = false)
-    private Incident incident;
+    private Incident incident; // Legătură către Incident
 
     @Column(nullable = false)
     private String numeFisier;
 
     @Column(nullable = false)
-    private String caleStocare; // Probabil calea către S3, minIO sau un folder de pe server
+    private String caleStocare;
 
-    private String tipFisier; // ex: "image/jpeg", "application/pdf"
+    private String tipFisier;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incarcat_de_id", nullable = false)
     private User incarcatDe;
 
-    // Echivalentul { timestamps: { createdAt: 'data_incarcare', updatedAt: false } }
     @Column(name = "data_incarcare", updatable = false)
     private LocalDateTime dataIncarcare;
 

@@ -65,6 +65,9 @@ public class SecurityConfig {
                         // /api/pontaj
                         .requestMatchers(antMatcher("/api/pontaj/**")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
 
+                        // /api/proces-verbal
+                        .requestMatchers(antMatcher("/api/proces-verbal/**")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
+
                         // Toate celelalte necesită autentificare
                         .anyRequest().authenticated()
                 )

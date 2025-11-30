@@ -9,7 +9,7 @@ export default function PaznicDashboard() {
         <h1 className="page-title">Home</h1>
         <div className="cards-container">
           <Link to="/pontare" className="card link-card">⚠️<p>Pontare</p></Link>
-          <Link to="/proceseverbale" className="card link-card">📄<p>Procese Verbale</p></Link>
+          <Link to="/proces-verbal/istoric" className="card link-card">📄<p>Procese Verbale</p></Link>
           {/* <div className="card">📄<p>Solicitări</p></div> */}
         </div>
       </main>

@@ -13,8 +13,9 @@ import PaznicDashboard from './paznic/PaznicDashboard';
 import AdaugaAngajat from "./admin/AdaugaAngajat";
 import AdaugaFirma from "./admin/AdaugaFirma";
 import PontarePage from './paznic/PontarePage';
+import ProcesVerbal from './documents/ProcesVerbal';
 
-function Dashboard({ user, onLogout }) {
+function Dashboard({ user }) {
   let content;
 
   switch (user.role) {
@@ -31,9 +32,11 @@ function Dashboard({ user, onLogout }) {
       content = <PaznicDashboard />;
       break;
     default:
-      content = <p style={{ padding: '50px', textAlign: 'center' }}>
-        Rol necunoscut.
-      </p>;
+      content = (
+        <p style={{ padding: '50px', textAlign: 'center' }}>
+          Rol necunoscut.
+        </p>
+      );
   }
 
   return (
@@ -49,17 +52,7 @@ function Dashboard({ user, onLogout }) {
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
-  const [solicitari, setSolicitari] = useState({
-    prelucrata: [
-      { id: 1, titlu: "Sesizare exemplu", data: "14/08/2025", firma: "Firma A", descriere: "O defecțiune a fost raportată la sistemul de supraveghere video de la poarta de nord.", pasi: "S-a contactat firma de mentenanță.", dataFinalizare: null }
-    ],
-    inCurs: [
-      { id: 2, titlu: "Incident minor", data: "13/08/2025", firma: "Firma B", descriere: "Un vizitator neînregistrat a încercat să intre în clădire.", pasi: "Agentul de pază a reținut persoana și a anunțat poliția.", dataFinalizare: null }
-    ],
-    rezolvata: [
-      { id: 3, titlu: "Alarmă falsă", data: "12/08/2025", firma: "Firma A", descriere: "Alarma de incendiu a pornit din cauza aburului de la bucătărie.", pasi: "S-a resetat sistemul de alarmă.", dataFinalizare: "12/08/2025" }
-    ]
-  });
+  const [solicitari, setSolicitari] = useState({ prelucrata: [], inCurs: [], rezolvata: [] });
 
   const [solicitariBeneficiar, setSolicitariBeneficiar] = useState([]);
 
@@ -85,10 +78,7 @@ export default function App() {
     <Router>
       <Header user={currentUser} onLogout={handleLogout} />
       <Routes>
-        <Route
-          path="/"
-          element={currentUser ? <Dashboard user={currentUser} /> : <HomePage />}
-        />
+        <Route path="/" element={currentUser ? <Dashboard user={currentUser} /> : <HomePage />} />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
 
         {/* ✅ Ruta pentru Pontare */}
@@ -103,55 +93,26 @@ export default function App() {
           } 
         />
 
-        <Route 
-          path="/solicitari" 
-          element={<Solicitari solicitari={solicitari} setSolicitari={setSolicitari} />} 
-        />
-        {/* Adăugăm noua rută pentru detalii */}
-        <Route 
-          path="/solicitari/:id" 
-          element={<SolicitariDetalii solicitari={solicitari} setSolicitari={setSolicitari} />} 
-        />
-               {/* --- BENEFICIAR --- */}
-        
-        <Route path="/adauga-angajat" element={<AdaugaAngajat />} />   {/* ✅ mutat în interiorul Routes */}
-        <Route path="/adauga-firma" element={<AdaugaFirma />} />   {/* ✅ mutat în interiorul Routes */}
-        <Route 
-          path="/beneficiar" 
-          element={
-            currentUser && currentUser.role === "BENEFICIAR" 
-              ? <BeneficiarDashboard /> 
-              : <p style={{ padding: "50px", textAlign: "center" }}>
-                  Acces interzis.
-                </p>
-          } 
-        />
-        {/* --- ADAUGĂ NOILE RUTE PENTRU SOLICITĂRI BENEFICIAR --- */}
-        <Route
-        path="/solicitariB"
-        element={
-          currentUser && currentUser.role === "BENEFICIAR"
-            // MODIFICAT: Folosim SolicitariB și trimitem doar prop-ul necesar
-            ? <SolicitariB solicitari={solicitariBeneficiar} /> 
-            : <p style={{ padding: "50px", textAlign: "center" }}>
-                Acces interzis.
-              </p>
-        }
-      />
+        <Route path="/solicitari" element={<Solicitari solicitari={solicitari} setSolicitari={setSolicitari} />} />
+        <Route path="/solicitari/:id" element={<SolicitariDetalii solicitari={solicitari} setSolicitari={setSolicitari} />} />
+        <Route path="/adauga-angajat" element={<AdaugaAngajat />} />
+        <Route path="/adauga-firma" element={<AdaugaFirma />} />
+        {/* Rutele pentru Beneficiar (protejate simplu) */}
+        <Route path="/beneficiar" element={ currentUser?.role === "beneficiar" ? <BeneficiarDashboard /> : <p>Acces interzis.</p> } />
+        <Route path="/solicitariB" element={ currentUser?.role === "beneficiar" ? <SolicitariB solicitari={solicitariBeneficiar} /> : <p>Acces interzis.</p> } />
+        <Route path="/adauga-solicitare" element={ currentUser?.role === "beneficiar" ? <AdaugaSolicitare setSolicitari={setSolicitariBeneficiar} /> : <p>Acces interzis.</p> } />
 
-      {/* Ruta pentru adăugarea unei solicitări (rămâne la fel) */}
-      <Route
-        path="/adauga-solicitare"
-        element={
-          currentUser && currentUser.role === "BENEFICIAR"
-          ? <AdaugaSolicitare 
-              setSolicitari={setSolicitariBeneficiar} 
-              currentUser={currentUser} 
-            />
-          : <p style={{ padding: "50px", textAlign: "center" }}>
-              Acces interzis.
-            </p>
-        }
+        {/* Ruta pentru Proces Verbal */}
+        <Route path="/proces-verbal/:pontajId" element={<ProcesVerbal />} />
+
+        <Route 
+          path="/admin/dashboard" 
+          element={currentUser?.role === 'administrator' ? <AdminDashboard /> : <p>Acces interzis. Doar pentru Administrator.</p>} 
+        />
+
+        <Route 
+          path="/paznic/dashboard" 
+          element={currentUser?.role === 'administrator' ? <PaznicDashboard /> : <p>Acces interzis. Doar pentru Administrator.</p>} 
       />
       </Routes>
     </Router>
