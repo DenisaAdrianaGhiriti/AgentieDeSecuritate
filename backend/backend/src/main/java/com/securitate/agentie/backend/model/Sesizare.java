@@ -40,10 +40,12 @@ public class Sesizare {
 
     private LocalDateTime updatedAt;
 
+//    private LocalDateTime expireAt;
     @PrePersist
     protected void onCreate() { createdAt = LocalDateTime.now(); }
     @PreUpdate
     protected void onUpdate() { updatedAt = LocalDateTime.now(); }
+
 
     // --- Constructor gol (JPA) ---
     public Sesizare() {}
@@ -69,4 +71,8 @@ public class Sesizare {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // NOU: Getter/Setter pentru expireAt
+//    public LocalDateTime getExpireAt() { return expireAt; }
+//    public void setExpireAt(LocalDateTime expireAt) { this.expireAt = expireAt; }
 }

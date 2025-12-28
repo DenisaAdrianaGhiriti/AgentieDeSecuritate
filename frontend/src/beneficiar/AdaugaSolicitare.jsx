@@ -1,59 +1,76 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./AdaugaSolicitare.css"; // Vom crea acest fișier imediat
+import apiClient from '../../apiClient'; // <-- MODIFICARE: Importăm apiClient
+import "./AdaugaSolicitare.css";
 
-export default function AdaugaSolicitare({ setSolicitari, currentUser }) {
-  const [titlu, setTitlu] = useState("");
-  const [descriere, setDescriere] = useState("");
+export default function AdaugaSolicitare() {
+  const [formData, setFormData] = useState({ titlu: "", descriere: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleAddSolicitare = (e) => {
-    e.preventDefault();
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-    if (!titlu || !descriere) {
-      alert("Te rugăm să completezi atât titlul, cât și descrierea!");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.titlu || !formData.descriere) {
+      setError("Titlul și descrierea sunt obligatorii.");
       return;
     }
+    setLoading(true);
+    setError("");
 
-    const newSolicitare = {
-      id: Date.now(),
-      titlu,
-      descriere,
-      data: new Date().toLocaleString(),
-      status: "inCurs",
-      autor: currentUser?.email || "beneficiar",
-    };
+    try {
+      // <-- MODIFICARE: Folosim apiClient, care gestionează automat token-ul
+      await apiClient.post("/sesizari", {
+        titlu: formData.titlu,
+        descriere: formData.descriere,
+      });
 
-    // Actualizăm starea din App.jsx
-    setSolicitari((prev) => [...prev, newSolicitare]);
-    
-    // Navigăm înapoi la lista de solicitări
-    navigate("/solicitariB");
+      alert("✅ Solicitarea a fost trimisă cu succes!");
+      navigate("/solicitariB");
+    } catch (err) {
+      setError(err.response?.data?.message || "Eroare la adăugarea solicitării!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="adauga-solicitare-container">
-      <h1>Adaugă o solicitare nouă</h1>
-      
-      <form className="adauga-solicitare-form" onSubmit={handleAddSolicitare}>
+      <h1>Adaugă o Solicitare Nouă</h1>
+
+      {error && <p style={{color: 'red', textAlign: 'center'}}>{error}</p>}
+
+      <form className="adauga-solicitare-form" onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="Titlul solicitării"
-          value={titlu}
-          onChange={(e) => setTitlu(e.target.value)}
+          name="titlu"
+          placeholder="Subiectul solicitării"
+          value={formData.titlu}
+          onChange={handleChange}
+          required
         />
         <textarea
-          placeholder="Descrierea detaliată a solicitării"
-          value={descriere}
-          onChange={(e) => setDescriere(e.target.value)}
+          name="descriere"
+          placeholder="Descrieți în detaliu solicitarea dumneavoastră..."
+          value={formData.descriere}
+          onChange={handleChange}
+          required
+          rows="5"
         ></textarea>
-        
+
         <div className="form-buttons">
-          <button type="button" className="back-btn-form" onClick={() => navigate("/solicitariB")}>
+          <button type="button" className="back-btn-form" onClick={() => navigate("/solicitariB")} disabled={loading}>
             Înapoi
           </button>
-          <button type="submit" className="submit-btn-form">
-            Trimite solicitarea
+          <button type="submit" className="submit-btn-form" disabled={loading}>
+            {loading ? "Se trimite..." : "Trimite Solicitarea"}
           </button>
         </div>
       </form>

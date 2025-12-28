@@ -1,0 +1,106 @@
+.angajati-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.angajati-container h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.table-responsive {
+  flex: 1;
+  overflow-x: auto;
+}
+
+.angajati-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #f9f9f9;
+  min-width: 500px;
+}
+
+.angajati-table th,
+.angajati-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.angajati-table th {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+}
+
+.angajati-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.angajati-table tr:hover {
+  background-color: #ddd;
+}
+
+.angajati-table td {
+  color: #555;
+}
+
+.back-button-container {
+  text-align: left;
+  margin-top: 20px;
+}
+
+.back-button-container button {
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.back-button-container button:hover {
+  background-color: #45a049;
+}
+
+/* Responsive design pentru prezența angajați */
+@media (max-width: 700px) {
+  .angajati-container {
+    padding: 8px 2vw;
+  }
+  .angajati-table {
+    min-width: 320px;
+    font-size: 13px;
+  }
+  .angajati-table th, .angajati-table td {
+    padding: 6px;
+  }
+  .back-button-container button {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .angajati-container h1 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .angajati-table {
+    font-size: 11px;
+  }
+  .angajati-container h1 {
+    font-size: 1rem;
+  }
+  .back-button-container button {
+    font-size: 11px;
+    padding: 6px 6px;
+  }
+}

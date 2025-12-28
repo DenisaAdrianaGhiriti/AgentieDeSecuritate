@@ -55,6 +55,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Încărcăm user-ul din baza de date
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
+                logger.info("JWT user=" + userEmail + " authorities=" + userDetails.getAuthorities()
+                        + " enabled=" + userDetails.isEnabled());
+
                 // Validăm token-ul
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     // Creăm un obiect de autentificare

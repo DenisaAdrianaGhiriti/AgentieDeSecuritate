@@ -1,93 +1,143 @@
-/* ====== Container general ====== */
-.adauga-angajat {
-  max-width: 480px;
-  margin: 60px auto;
-  padding: 30px 35px;
-  background: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  font-family: "Segoe UI", Arial, sans-serif;
+.form-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 70px); /* 70px este înălțimea header-ului */
 }
 
-/* ====== Titlu ====== */
-h2 {
+.form-card {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px B2px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+.form-card h2 {
   text-align: center;
-  margin-bottom: 25px;
-  color: #2d2d2d;
-  font-size: 26px;
-  font-weight: 600;
+  margin-bottom: 2rem;
+  color: #333;
+  font-size: 1.5rem;
 }
 
-/* ====== Formular ====== */
-.form-container {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-/* ====== Grup input ====== */
 .form-group {
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 1.25rem;
 }
 
-label {
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-weight: 600;
-  margin-bottom: 6px;
-  color: #444;
+  color: #555;
 }
 
 .form-input {
-  height: 42px;
-  padding: 0 12px;
+  width: 100%;
+  padding: 0.75rem;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.2s ease;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #2d89ef;
-  box-shadow: 0 0 0 3px rgba(45, 137, 239, 0.2);
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-/* ====== Butoane ====== */
-.buttons {
+.form-actions {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 25px;
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
-.save-btn, .back-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
+.form-button {
+  padding: 0.75rem 1.5rem;
   border: none;
-  transition: all 0.3s ease;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
-/* ====== Buton salvare ====== */
-.save-btn {
-  background-color: #2d89ef;
+.form-button:hover {
+  transform: translateY(-1px);
+}
+
+.submit-btn {
+  background-color: #007bff;
   color: white;
-  box-shadow: 0 3px 6px rgba(45, 137, 239, 0.3);
-}
 
-.save-btn:hover {
-  background-color: #1d5bbf;
 }
+.submit-btn:hover { background-color: #0056b3; }
 
-/* ====== Buton înapoi ====== */
 .back-btn {
-  background-color: #f2f2f2;
-  color: #333;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  
+  background-color: #6c757d;
+  color: white;
+}
+.back-btn:hover { background-color: #5a6268; }
+
+.submit-btn:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
 }
 
-.back-btn:hover {
-  background-color: #ddd;
+/* Responsive design pentru AdaugaAngajat */
+@media (max-width: 700px) {
+  .form-page-container {
+    padding: 8px 2vw;
+  }
+  .form-card {
+    padding: 1.2rem;
+    max-width: 98vw;
+  }
+  .form-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    font-size: 0.95rem;
+  }
+  .form-input {
+    font-size: 0.95rem;
+    padding: 0.5rem;
+  }
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 0.7rem;
+    margin-top: 1rem;
+  }
+  .form-button {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 0.5rem 0.7rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .form-card {
+    padding: 0.5rem;
+  }
+  .form-card h2 {
+    font-size: 1rem;
+  }
+  .form-group label {
+    font-size: 0.9rem;
+  }
+  .form-input {
+    font-size: 0.9rem;
+    padding: 0.3rem;
+  }
+  .form-button {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+  }
 }

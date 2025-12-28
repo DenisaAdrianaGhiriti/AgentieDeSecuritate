@@ -5,14 +5,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-// --- Importuri noi necesare ---
-import jakarta.persistence.Embedded;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.FetchType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "users")
@@ -43,25 +39,30 @@ public class User implements UserDetails {
     @Column(columnDefinition = "boolean default true")
     private boolean esteActiv = true;
 
-    // --- CÂMPURI NOI ADĂUGATE (din logica Node.js) ---
+    @JsonIgnore
+    // NOU: Relația inversă pentru Sesizările create de acest User (Beneficiar)
+    @OneToMany(mappedBy = "createdByBeneficiary", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Sesizare> sesizariCreate = new ArrayList<>();
 
-    /**
-     * Relație Many-to-One către același tabel (User).
-     * Specifică ce cont de admin a creat acest utilizator.
-     * Este LAZY pentru a nu încărca adminul decât la cerere explicită.
-     */
+    @JsonIgnore
+    // NOU: Relația inversă pentru Sesizările atribuite acestui User (Admin)
+    @OneToMany(mappedBy = "assignedAdmin", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Sesizare> sesizariAtribuite = new ArrayList<>();
+
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creat_de_admin_id") // Numele coloanei de foreign key în baza de date
+    @JoinColumn(name = "creat_de_admin_id")
     private User creatDeAdmin;
 
-    /**
-     * Încorporează câmpurile din clasa Profile (nume_firma, cui, nr_legitimatie etc.)
-     * direct în tabelul 'users'.
-     */
     @Embedded
     private Profile profile;
 
-    // --- Câmpurile pentru timestamp (rămân neschimbate) ---
+    @JsonIgnore
+    // NOU: Relația One-to-Many de la Beneficiar la seturile de alocări
+    @OneToMany(mappedBy = "beneficiary", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<AssignedPazniciItem> assignedPazniciItems = new ArrayList<>();
+
+    // --- Câmpurile pentru timestamp ---
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -81,19 +82,7 @@ public class User implements UserDetails {
     public User() {
     }
 
-    // --- Constructor cu câmpurile de bază (Opțional, dar util) ---
-    // (Nu am adăugat noile câmpuri aici pentru a nu-l complica excesiv)
-    public User(String email, String password, Role role, String nume, String prenume, String telefon, boolean esteActiv) {
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.nume = nume;
-        this.prenume = prenume;
-        this.telefon = telefon;
-        this.esteActiv = esteActiv;
-    }
-
-    // --- Implementare Metode UserDetails (pentru Spring Security) ---
+    // --- Implementare Metode UserDetails ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -119,104 +108,56 @@ public class User implements UserDetails {
         return this.esteActiv;
     }
 
-    // --- GETTERS ȘI SETTERS MANUALE ---
+    // --- GETTERS ȘI SETTERS ---
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
     @Override
-    public String getPassword() {
-        return password;
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
+    public String getNume() { return nume; }
+    public void setNume(String nume) { this.nume = nume; }
+    public String getPrenume() { return prenume; }
+    public void setPrenume(String prenume) { this.prenume = prenume; }
+    public String getTelefon() { return telefon; }
+    public void setTelefon(String telefon) { this.telefon = telefon; }
+    public boolean isEsteActiv() { return esteActiv; }
+    public void setEsteActiv(boolean esteActiv) { this.esteActiv = esteActiv; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public User getCreatDeAdmin() { return creatDeAdmin; }
+    public void setCreatDeAdmin(User creatDeAdmin) { this.creatDeAdmin = creatDeAdmin; }
+    public Profile getProfile() { return profile; }
+    public void setProfile(Profile profile) { this.profile = profile; }
+
+    // Getter/Setter pentru AssignedPazniciItem
+    public List<AssignedPazniciItem> getAssignedPazniciItems() {
+        return assignedPazniciItems;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setAssignedPazniciItems(List<AssignedPazniciItem> assignedPazniciItems) {
+        this.assignedPazniciItems = assignedPazniciItems;
     }
 
-    public Role getRole() {
-        return role;
+    public List<Sesizare> getSesizariCreate() {
+        return sesizariCreate;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setSesizariCreate(List<Sesizare> sesizariCreate) {
+        this.sesizariCreate = sesizariCreate;
     }
 
-    public String getNume() {
-        return nume;
+    public List<Sesizare> getSesizariAtribuite() {
+        return sesizariAtribuite;
     }
 
-    public void setNume(String nume) {
-        this.nume = nume;
-    }
-
-    public String getPrenume() {
-        return prenume;
-    }
-
-    public void setPrenume(String prenume) {
-        this.prenume = prenume;
-    }
-
-    public String getTelefon() {
-        return telefon;
-    }
-
-    public void setTelefon(String telefon) {
-        this.telefon = telefon;
-    }
-
-    public boolean isEsteActiv() {
-        return esteActiv;
-    }
-
-    public void setEsteActiv(boolean esteActiv) {
-        this.esteActiv = esteActiv;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    // --- GETTERS ȘI SETTERS PENTRU CÂMPURILE NOI ADĂUGATE ---
-
-    public User getCreatDeAdmin() {
-        return creatDeAdmin;
-    }
-
-    public void setCreatDeAdmin(User creatDeAdmin) {
-        this.creatDeAdmin = creatDeAdmin;
-    }
-
-    public Profile getProfile() {
-        return profile;
-    }
-
-    public void setProfile(Profile profile) {
-        this.profile = profile;
+    public void setSesizariAtribuite(List<Sesizare> sesizariAtribuite) {
+        this.sesizariAtribuite = sesizariAtribuite;
     }
 }

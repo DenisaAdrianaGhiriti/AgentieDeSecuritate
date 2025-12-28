@@ -26,10 +26,41 @@ export default function LoginPage({ onLogin }) {
          { email, password }, 
           config
     );
+    console.log("LOGIN RESPONSE:", data);
+
+    // încearcă să găsești token-ul indiferent cum se numește
+    const token = data.token || data.jwt || data.jwtToken || data.accessToken;
+    if (token) {
+      localStorage.setItem("token", token);
+    }
+
+    // păstrează și currentUser pentru rol/email/etc
+    localStorage.setItem("currentUser", JSON.stringify(data));
 
     onLogin(data);
-    navigate('/');
-        } catch (err) {
+    // --- LOGICA DE REDIRECȚIONARE EXPLICITĂ ---
+        let redirectPath = '/'; 
+        
+        // **Verificați dacă data.role există și este corect**
+        switch (data.role) {
+            case 'ADMINISTRATOR':
+                redirectPath = '/administrator/dashboard';
+                break;
+            case 'ADMIN':
+                redirectPath = '/admin/dashboard'; // <-- ACUM REDIRECȚIONĂM LA RUTA ADMIN
+                break;
+            case 'BENEFICIAR':
+                redirectPath = '/beneficiar/dashboard';
+                break;
+            case 'PAZNIC':
+                redirectPath = '/paznic/dashboard';
+                break;
+            default:
+                redirectPath = '/';
+        }
+        
+        navigate(redirectPath);
+      } catch (err) {
       setError(err.response?.data?.message || 'A apărut o eroare. Vă rugăm să încercați din nou.');
     }
   };

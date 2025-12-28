@@ -1,5 +1,5 @@
 .admin-dashboard {
-  background-color: #adbbdd; /* fundal crem */
+  background-color: #adbbdd;
   min-height: 100vh;
   font-family: Arial, sans-serif;
   color: #0d1b2a;
@@ -16,15 +16,20 @@
 .page-title {
   font-size: 36px;
   font-weight: bold;
-  margin: 30px;
+  margin-top: 0 !important;
 }
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 coloane fixe */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
+  justify-items: center;
   padding: 0 30px 30px 30px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
 }
+
 
 .card {
   background-color: white;
@@ -48,11 +53,11 @@
 }
 
 .link-card {
-  text-decoration: none; /* scoate sublinierea */
-  color: inherit; /* folosește culoarea textului din card */
+  text-decoration: none;
+  color: inherit;
 }
 
 .link-card:hover {
-  text-decoration: none; /* asigură că nu apare sublinierea la hover */
+  text-decoration: none;
   color: inherit;
 }

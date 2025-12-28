@@ -21,23 +21,35 @@ public class Incident {
     private LocalDateTime dataIncident;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "paznic_id", nullable = false)
+    @JoinColumn(name = "paznic_id", nullable = true)
     private User paznic;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id", nullable = true)
     private Post post;
 
-    // Echivalentul { timestamps: true }
+    // Echivalentul companieId din modelul Node.js
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "companie_id", nullable = false)
+    private User companie;
+
+    @Column(nullable = false)
+    private String punctDeLucru; // Din modelul Node.js
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean restabilit = false;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean istoric = false; // Nou: flag pentru incidente arhivate/restabilite
+
+    // Timestamps
     @Column(updatable = false)
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        // Setăm dataIncident la creare dacă nu e setată explicit
         if (dataIncident == null) {
             dataIncident = LocalDateTime.now();
         }
@@ -61,6 +73,14 @@ public class Incident {
     public void setPaznic(User paznic) { this.paznic = paznic; }
     public Post getPost() { return post; }
     public void setPost(Post post) { this.post = post; }
+    public User getCompanie() { return companie; }
+    public void setCompanie(User companie) { this.companie = companie; }
+    public String getPunctDeLucru() { return punctDeLucru; }
+    public void setPunctDeLucru(String punctDeLucru) { this.punctDeLucru = punctDeLucru; }
+    public boolean isRestabilit() { return restabilit; }
+    public void setRestabilit(boolean restabilit) { this.restabilit = restabilit; }
+    public boolean isIstoric() { return istoric; }
+    public void setIstoric(boolean istoric) { this.istoric = istoric; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

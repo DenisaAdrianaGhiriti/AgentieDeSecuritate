@@ -1,10 +1,12 @@
 .pontare-page {
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: calc(100vh - 70px);
+  align-items: flex-start;  /* 🔹 aliniază sus */
+  min-height: calc(100vh - 70px);  /* 🔹 permite creștere */
   background: linear-gradient(135deg, #dbeafe, #f0f4f8);
   font-family: Arial, sans-serif;
+  overflow-y: auto;         /* 🔹 scroll pe pagină dacă e nevoie */
+  padding: 20px 0;          /* spațiu sus/jos */
 }
 
 .pontare-container {
@@ -87,4 +89,169 @@
 .back-btn:hover {
   background: #0d1b2a;
   color: white;
+}
+/* Adaugă la finalul fișierului PontarePage.css */
+
+.status-btn {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  background-color: #6c757d; /* Gri neutru */
+  color: white;
+}
+
+.status-btn:hover {
+  background-color: #5a6268;
+  transform: translateY(-2px);
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;        /* 🔹 important */
+  overflow-y: auto;        /* 🔹 adaugă scroll doar în interiorul modalului */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-form-group {
+  margin-bottom: 1rem;
+}
+
+.modal-form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.modal-form-group input,
+.modal-form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.modal-actions button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    flex-grow: 1;
+}
+
+.modal-actions .cancel-btn {
+    background-color: #6c757d;
+    color: white;
+}
+.modal-actions .submit-pv-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Responsive design pentru PontarePage */
+@media (max-width: 700px) {
+  .pontare-container {
+    padding: 18px 6px;
+    max-width: 98vw;
+  }
+  .pontare-container h2 {
+    font-size: 1.1rem;
+    margin-bottom: 18px;
+  }
+  .buttons {
+    gap: 10px;
+  }
+  .start-btn, .end-btn, .status-btn, .back-btn {
+    font-size: 15px;
+    padding: 10px;
+  }
+  .pontaj-info {
+    font-size: 14px;
+    padding: 8px;
+  }
+  .modal-content {
+    padding: 1rem;
+    max-width: 98vw;
+  }
+  .modal-form-group input,
+  .modal-form-group textarea {
+    font-size: 0.95rem;
+    padding: 0.5rem;
+  }
+  .modal-actions button {
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .pontare-container {
+    padding: 6px 2vw;
+  }
+  .pontare-container h2 {
+    font-size: 1rem;
+  }
+  .start-btn, .end-btn, .status-btn, .back-btn {
+    font-size: 13px;
+    padding: 7px;
+  }
+  .pontaj-info {
+    font-size: 12px;
+    padding: 4px;
+  }
+  .modal-content {
+    padding: 0.5rem;
+  }
+  .modal-form-group input,
+  .modal-form-group textarea {
+    font-size: 0.9rem;
+    padding: 0.3rem;
+  }
+  .modal-actions button {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+  }
 }

@@ -94,8 +94,15 @@ public class ProcesVerbalService {
             document.add(new Paragraph("\n", FONT_NORMAL));
 
             // "La obiectivul..." (Paragrafele se construiesc puțin diferit)
+            User beneficiary = pontaj.getBeneficiary();
             Paragraph pObiectiv = new Paragraph("La obiectivul (denumirea si adresa) ", FONT_NORMAL);
-            pObiectiv.add(new Paragraph(pontaj.getPost().getNumePost() + ", " + pontaj.getPost().getAdresaPost(), FONT_BOLD));
+            // NOTĂ: Folosește câmpurile din entitatea User a Beneficiarului, adaptat la structura Profile
+            String numeCompanie = beneficiary.getProfile().getNumeFirma(); // Sau getNumeCompanie() dacă e cazul
+            String punctDeLucru = beneficiary.getProfile().getPuncteDeLucru().isEmpty()
+                    ? "(Punct principal)"
+                    : beneficiary.getProfile().getPuncteDeLucru().get(0); // Luăm primul punct de lucru ca exemplu.
+
+            pObiectiv.add(new Paragraph(numeCompanie + ", " + punctDeLucru, FONT_BOLD));
             pObiectiv.add(new Paragraph(",", FONT_NORMAL));
             document.add(pObiectiv);
             document.add(new Paragraph("\n", FONT_NORMAL));
@@ -194,7 +201,6 @@ public class ProcesVerbalService {
         ProcesVerbal newProcesVerbal = new ProcesVerbal();
         newProcesVerbal.setPontaj(pontaj);
         newProcesVerbal.setPaznic(paznic);
-        newProcesVerbal.setPost(pontaj.getPost());
         newProcesVerbal.setReprezentantBeneficiar(request.getReprezentant_beneficiar());
         newProcesVerbal.setOraDeclansareAlarma(request.getOra_declansare_alarma());
         newProcesVerbal.setOraPrezentareEchipaj(request.getOra_prezentare_echipaj());

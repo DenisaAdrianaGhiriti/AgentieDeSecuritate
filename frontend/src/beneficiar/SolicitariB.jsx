@@ -1,49 +1,75 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import "./SolicitariB.css"; // Vom crea acest fișier imediat
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import apiClient from '../../apiClient'; 
+import "./SolicitariB.css";
 
-export default function SolicitariB({ solicitari }) {
-  const navigate = useNavigate();
+export default function SolicitariB() {
+  const [solicitari, setSolicitari] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "inCurs": return "În curs de prelucrare";
-      case "inRezolvare": return "În rezolvare";
-      case "finalizata": return "Finalizată";
-      default: return "Necunoscut";
-    }
-  };
+  useEffect(() => {
+    const fetchSolicitari = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        // NU MAI ESTE NEVOIE SĂ EXTRAGEM ID-UL DIN localStorage
+        // Spring Security injectează user-ul logat direct în ruta /sesizari/beneficiar
+        
+        // CORECȚIE URL: Folosim ruta corectă pentru Beneficiar
+        const { data } = await apiClient.get(`/sesizari/beneficiar`); 
+        
+        // Proprietățile createdAt și status sunt deja camelCase în Spring
+        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setSolicitari(data);
+      } catch (err) {
+        setError(err.response?.data?.message || "Eroare la preluarea solicitărilor!");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSolicitari();
+  }, []);
 
-  return (
-    <div className="solicitari-container">
-      {/* Butonul fixat de "Înapoi" care duce la dashboard */}
-      <button className="back-to-dash-btn" onClick={() => navigate("/beneficiar")}>
-        ← Înapoi la Home
-      </button>
+  if (loading) return <div style={{textAlign: 'center', padding: '50px'}}>Se încarcă...</div>;
+  if (error) return <div style={{textAlign: 'center', padding: '50px', color: 'red'}}>{error}</div>;
 
-      <div className="solicitari-header">
-        <h1>Solicitările mele</h1>
-        {/* Butonul care duce la pagina de adăugare */}
-        <button className="add-solicitare-btn" onClick={() => navigate("/adauga-solicitare")}>
-          + Adaugă solicitare
-        </button>
-      </div>
-
-      {/* Lista solicitărilor */}
-      <div className="solicitari-list">
-        {solicitari.length === 0 ? (
-          <p>Nu ai trimis nicio solicitare încă.</p>
-        ) : (
-          solicitari.map((s) => (
-            <div className="solicitare-card" key={s.id}>
-              <h3>{s.titlu}</h3>
-              <p>{s.descriere}</p>
-              <p><strong>Data:</strong> {s.data}</p>
-              <p><strong>Status:</strong> {getStatusLabel(s.status)}</p>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
+  return (
+    <div className="solicitari-container">
+      <div className="solicitari-header">
+        <h1>Solicitările Mele</h1>
+        <Link to="/solicitariB/adauga" className="add-solicitare-btn">
+          ➕ Adaugă Solicitare
+        </Link>
+      </div>
+      <div className="table-responsive">
+        <table className="solicitari-table">
+          <thead>
+            <tr>
+              <th>Titlu</th>
+              <th>Descriere</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {solicitari.length > 0 ? (
+              solicitari.map((s) => (
+                <tr key={s.id}> {/* CORECȚIE: Folosim s.id */}
+                  <td>{s.titlu}</td>
+                  <td>{s.descriere}</td>
+                  <td>{s.status}</td>
+                </tr>
+              ))
+            ) : (
+              <tr><td colSpan="3" style={{ textAlign: "center" }}>Nu aveți nicio solicitare înregistrată.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <button className="back-bottom-btn" onClick={() => navigate("/beneficiar/dashboard")}>
+        ⬅ Înapoi
+      </button>
+    </div>
+  );
 }

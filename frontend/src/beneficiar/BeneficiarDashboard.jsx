@@ -8,12 +8,14 @@ export default function BeneficiarDashboard() {
       <main>
         <h1 className="page-title">Home</h1>
         <div className="cards-container">
+
           <Link to="/solicitariB" className="card link-card">📄<p>Solicitări</p></Link>
           {/* <div className="card">📄<p>Solicitări</p></div> */}
-          <Link to="/solicitariB" className="card link-card">🚨<p>Incidente</p></Link>
+          <Link to="/incidenteB" className="card link-card">🚨<p>Incidente</p></Link>
           {/* <div className="card">🚨<p>Incidente</p></div> */}
-          <div className="card">👤<p>Angajați</p></div>
-          <div className="card">✅<p>Prezență Angajați</p></div>
+          <Link to="/angajatiB" className="card link-card">👤<p>Angajați</p></Link>
+          {/* <div className="card">✅<p>Prezență Angajați</p></div> */}
+          <Link to="/prezentaAngajati" className="card link-card">✅<p>Prezență Angajați</p></Link>
         </div>
       </main>
     </div>
