@@ -8,6 +8,7 @@ import com.securitate.agentie.backend.repository.PontajRepository;
 import com.securitate.agentie.backend.repository.ProcesVerbalPredarePrimireRepository;
 import com.securitate.agentie.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.securitate.agentie.backend.dto.PontajDTO;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -140,5 +141,57 @@ public class PontajService {
     public List<Pontaj> getIstoricBeneficiar(User beneficiary) {
         LocalDateTime dateLimit = LocalDateTime.now().minusDays(60);
         return pontajRepository.findByBeneficiaryAndOraIntrareGreaterThan(beneficiary, dateLimit);
+    }
+
+    private PontajDTO toDTO(Pontaj p) {
+        String numeFirma = "N/A";
+        if (p.getBeneficiary() != null && p.getBeneficiary().getProfile() != null) {
+            // dacă în profile ai numeFirma sau numeCompanie, folosește exact ce ai tu
+            // eu presupun getNumeFirma()
+            numeFirma = p.getBeneficiary().getProfile().getNumeFirma();
+        }
+
+        return new PontajDTO(
+                p.getId(),
+                p.getOraIntrare(),
+                p.getOraIesire(),
+                p.getPaznic().getId(),
+                p.getPaznic().getNume(),
+                p.getPaznic().getPrenume(),
+                p.getPaznic().getEmail(),
+                p.getPaznic().getTelefon(),
+                p.getBeneficiary() != null ? p.getBeneficiary().getId() : null,
+                numeFirma
+        );
+    }
+
+    public List<PontajDTO> getActiveEmployeesDTO() {
+        return pontajRepository.findByOraIesireIsNull()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PontajDTO> getIstoricPontajeDTO() {
+        LocalDateTime dateLimit = LocalDateTime.now().minusDays(60);
+        return pontajRepository.findByOraIntrareGreaterThan(dateLimit)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PontajDTO> getActiveEmployeesForBeneficiarDTO(User beneficiary) {
+        return pontajRepository.findByOraIesireIsNullAndBeneficiary(beneficiary)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PontajDTO> getIstoricBeneficiarDTO(User beneficiary) {
+        LocalDateTime dateLimit = LocalDateTime.now().minusDays(60);
+        return pontajRepository.findByBeneficiaryAndOraIntrareGreaterThan(beneficiary, dateLimit)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 }

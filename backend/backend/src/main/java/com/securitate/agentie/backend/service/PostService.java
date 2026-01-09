@@ -5,6 +5,7 @@ import com.securitate.agentie.backend.model.User;
 import com.securitate.agentie.backend.repository.PostRepository;
 import com.securitate.agentie.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.securitate.agentie.backend.dto.AssignedWorkpointsResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,5 +39,37 @@ public class PostService {
     // Logica din 'getPosts'
     public List<Post> getPosts(User adminCreator) {
         return postRepository.findByCreatedByAdmin(adminCreator);
+    }
+    public List<AssignedWorkpointsResponse> getMyAssignedWorkpoints(User paznic) {
+        List<Post> posts = postRepository.findAll();
+
+        return posts.stream()
+                .collect(java.util.stream.Collectors.groupingBy(p -> p.getBeneficiary().getId()))
+                .entrySet()
+                .stream()
+                .map(entry -> {
+                    Long beneficiarId = entry.getKey();
+                    List<Post> lista = entry.getValue();
+
+                    User beneficiar = lista.get(0).getBeneficiary();
+
+                    String numeCompanie = null;
+                    if (beneficiar.getProfile() != null) {
+                        numeCompanie = beneficiar.getProfile().getNumeFirma();
+                    }
+                    if (numeCompanie == null || numeCompanie.isBlank()) {
+                        // fallback ca să vezi ceva în dropdown
+                        numeCompanie = beneficiar.getEmail(); // sau beneficiar.getNume() + " " + beneficiar.getPrenume()
+                    }
+
+                    List<String> puncte = lista.stream()
+                            .map(Post::getNumePost)
+                            .filter(s -> s != null && !s.isBlank())
+                            .distinct()
+                            .toList();
+
+                    return new AssignedWorkpointsResponse(beneficiarId, numeCompanie, puncte);
+                })
+                .toList();
     }
 }

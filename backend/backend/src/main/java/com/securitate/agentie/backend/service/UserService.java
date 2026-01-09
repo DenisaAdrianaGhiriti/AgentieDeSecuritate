@@ -232,10 +232,14 @@ public class UserService {
     }
 
     // NOU: getAngajatiBeneficiar (Paznicii alocați unui Beneficiar)
+    @Transactional(readOnly = true)
     public List<SimpleUserDTO> getAngajatiBeneficiar(User beneficiary) {
-        // Colectăm toți paznicii unici din toate AssignedPazniciItem ale acestui beneficiar
 
-        List<User> uniquePaznici = beneficiary.getAssignedPazniciItems().stream()
+        // IMPORTANT: reîncarcă beneficiarul din DB ca să ai context Hibernate valid
+        User b = userRepository.findById(beneficiary.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Beneficiarul nu a fost găsit."));
+
+        List<User> uniquePaznici = b.getAssignedPazniciItems().stream()
                 .flatMap(item -> item.getPaznici().stream())
                 .collect(Collectors.collectingAndThen(
                         Collectors.toCollection(HashSet::new),
@@ -243,7 +247,13 @@ public class UserService {
 
         return uniquePaznici.stream()
                 .map(u -> {
-                    SimpleUserDTO dto = new SimpleUserDTO(u.getId(), u.getNume(), u.getPrenume(), u.getEmail(), u.getTelefon());
+                    SimpleUserDTO dto = new SimpleUserDTO(
+                            u.getId(),
+                            u.getNume(),
+                            u.getPrenume(),
+                            u.getEmail(),
+                            u.getTelefon()
+                    );
                     if (u.getProfile() != null) {
                         dto.setNrLegitimatie(u.getProfile().getNrLegitimatie());
                     }
@@ -251,4 +261,5 @@ public class UserService {
                 })
                 .collect(Collectors.toList());
     }
+
 }

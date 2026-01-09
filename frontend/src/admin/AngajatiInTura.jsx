@@ -10,28 +10,42 @@ import "./AngajatiInTura.css";
 
 // Accesăm proprietățile User-ului Paznic și Beneficiar de pe obiectul Pontaj
 const extractPontajData = (p) => {
-    // Proprietățile Pontajului sunt camelCase
-    const paznic = p.paznic; 
-    const beneficiary = p.beneficiary;
-
+  // dacă vine DTO "flat"
+  if (p.paznicNume || p.paznicPrenume || p.paznicEmail) {
     return {
-        // Proprietăți Pontaj:
-        id: p._id,
-        oraIntrare: p.ora_intrare, // Spring returnează ISO String (LocalDateTime)
-        oraIesire: p.ora_iesire,   // Spring returnează ISO String (LocalDateTime)
-        
-        // Proprietăți Paznic (User):
-        paznicId: paznic?._id,
-        paznicNume: paznic?.nume,
-        paznicPrenume: paznic?.prenume,
-        paznicEmail: paznic?.email,
-        paznicTelefon: paznic?.telefon,
-        
-        // Proprietăți Beneficiar (User):
-        beneficiaryId: beneficiary?._id,
-        // Profile.numeFirma este camelCase în Spring
-        numeCompanie: beneficiary?.profile?.nume_companie || "N/A"
+      id: p.id,
+      oraIntrare: p.oraIntrare,
+      oraIesire: p.oraIesire,
+
+      paznicId: p.paznicId,
+      paznicNume: p.paznicNume,
+      paznicPrenume: p.paznicPrenume,
+      paznicEmail: p.paznicEmail,
+      paznicTelefon: p.paznicTelefon,
+
+      beneficiaryId: p.beneficiaryId,
+      numeCompanie: p.numeCompanie || "N/A",
     };
+  }
+
+  // dacă vine entitatea "nested"
+  const paznic = p.paznic;
+  const beneficiary = p.beneficiary;
+
+  return {
+    id: p.id,
+    oraIntrare: p.oraIntrare,
+    oraIesire: p.oraIesire,
+
+    paznicId: paznic?.id,
+    paznicNume: paznic?.nume,
+    paznicPrenume: paznic?.prenume,
+    paznicEmail: paznic?.email,
+    paznicTelefon: paznic?.telefon,
+
+    beneficiaryId: beneficiary?.id,
+    numeCompanie: beneficiary?.profile?.numeFirma || beneficiary?.profile?.numeCompanie || "N/A",
+  };
 };
 
 
@@ -70,6 +84,8 @@ export default function AngajatiInTura() {
                 setLoading(false);
             }
         };
+
+        // console.log("RAW DATA:", rawData);
 
         if (view === "prezenta") {
             fetchAngajati();

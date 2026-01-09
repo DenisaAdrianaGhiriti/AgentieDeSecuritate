@@ -21,21 +21,28 @@ public class RaportEvenimentController {
     @PostMapping("/create")
     public ResponseEntity<?> createRaportEveniment(
             @RequestBody RaportEvenimentRequest request,
-            @AuthenticationPrincipal User paznic) {
+            @AuthenticationPrincipal User paznic
+    ) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    raportEvenimentService.createRaportEveniment(request, paznic)
-            );
+            // ✅ Service-ul întoarce DTO (RaportEvenimentResponse), nu entitate JPA
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(raportEvenimentService.createRaportEveniment(request, paznic));
+
         } catch (IllegalArgumentException | IllegalStateException e) {
+            // validări / stare logică (tura activă etc.)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Eroare la generarea documentului: " + e.getMessage());
+            // eroare neașteptată
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Eroare la generarea documentului: " + e.getMessage());
         }
     }
 
     @GetMapping("/documente")
     public ResponseEntity<?> getDocumente() {
-        // Autorizarea e în SecurityConfig
+        // ⚠️ Atenție: dacă getDocumente() întoarce entități JPA cu relații LAZY,
+        // poți primi din nou LazyInitializationException la serializare.
         return ResponseEntity.ok(raportEvenimentService.getDocumente());
     }
 }

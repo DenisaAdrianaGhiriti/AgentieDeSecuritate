@@ -1,241 +1,319 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import apiClient from '../../apiClient'; // CORECȚIE CALE
+import { useNavigate } from "react-router-dom";
+import apiClient from "../../apiClient";
 import "./PontarePage.css";
-import SignaturePadWrapper from '../components/SignaturePad';
+import SignaturePadWrapper from "../components/SignaturePad";
 
-// --- Componenta Modal (Corectată pentru Mongoose/underscore_case) ---
+// --- Modal pentru Spring (camelCase + Long) ---
 const ProcesVerbalModal = ({ pontajId, onSubmit, onCancel, loading }) => {
-  const [formData, setFormData] = useState({
-    // Folosim underscore_case pentru a trimite corect la Mongoose
-    data_incheierii: new Date().toISOString().slice(0, 16),
-    nume_reprezentant_primire: "",
-    obiecte_predate: "",
-    reprezentantBeneficiar: "", // ID-ul Beneficiarului (ObjectId)
-    signatureDataURL: '',
-    reprezentantVigilent: "", // ID-ul Paznicului Următor (ObjectId)
-  });
+  const [formData, setFormData] = useState({
+    dataIncheierii: new Date().toISOString().slice(0, 16), // "YYYY-MM-DDTHH:mm"
+    numeReprezentantPrimire: "",
+    obiectePredate: "",
+    reprezentantBeneficiar: "", // String (nume companie)
+    reprezentantVigilentId: "", // Long (id numeric)
+    signatureDataURL: "",
+  });
 
-  const [beneficiari, setBeneficiari] = useState([]);
-  const [signatureSaved, setSignatureSaved] = useState(false);
-  const [paznici, setPaznici] = useState([]);
+  const [beneficiari, setBeneficiari] = useState([]);
+  const [paznici, setPaznici] = useState([]);
+  const [signatureSaved, setSignatureSaved] = useState(false);
 
-  useEffect(() => {
-    const fetchBeneficiari = async () => {
-      try {
-        const { data } = await apiClient.get("/users/beneficiari");
-        // CORECȚIE: Ne asigurăm că setăm un array, chiar dacă API-ul returnează altceva
-        setBeneficiari(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Eroare la încărcarea beneficiarilor:", err);
-        setBeneficiari([]);
-      }
-    };
-    const fetchPaznici = async () => {
-      try {
-        const { data } = await apiClient.get("/users/paznici");
-        // CORECȚIE: Ne asigurăm că setăm un array, chiar dacă API-ul returnează altceva
-        setPaznici(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Eroare la încărcarea paznicilor:", err);
-        setPaznici([]);
-      }
-    };
-    fetchBeneficiari();
-    fetchPaznici();
-  }, []);
+  useEffect(() => {
+    const fetchBeneficiari = async () => {
+      try {
+        const { data } = await apiClient.get("/users/beneficiari");
+        setBeneficiari(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Eroare la încărcarea beneficiarilor:", err);
+        setBeneficiari([]);
+      }
+    };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-  
-  const handleSaveSignature = (signature) => {
-    setFormData(prev => ({ ...prev, signatureDataURL: signature }));
-    setSignatureSaved(true);
-    alert('Semnătura a fost salvată. Puteți încheia tura.');
-  };
+    const fetchPaznici = async () => {
+      try {
+        const { data } = await apiClient.get("/users/paznici");
+        setPaznici(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Eroare la încărcarea paznicilor:", err);
+        setPaznici([]);
+      }
+    };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.signatureDataURL) {
-      alert("EROARE: Trebuie să semnați procesul verbal înainte de a încheia tura!");
-      return;
-    }
-    // CORECȚIE: Construim payload-ul final (care folosește ID-uri Mongoose și datele din modal)
-    onSubmit({
-        pontajId: pontajId,
-        data_incheierii: formData.data_incheierii,
-        nume_reprezentant_primire: formData.nume_reprezentant_primire,
-        obiecte_predate: formData.obiecte_predate,
-        reprezentantBeneficiar: formData.reprezentantBeneficiar,
-        reprezentantVigilent: formData.reprezentantVigilent,
-        signatureDataURL: formData.signatureDataURL
-    });
-  };
+    fetchBeneficiari();
+    fetchPaznici();
+  }, []);
 
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <form onSubmit={handleSubmit}>
-          <h2>Proces Verbal de Predare-Primire</h2>
-          <fieldset disabled={signatureSaved}>
-            <div className="modal-form-group">
-              <label htmlFor="data_incheierii">Data și Ora Încheierii</label>
-              <input id="data_incheierii" type="datetime-local" name="data_incheierii" value={formData.data_incheierii} onChange={handleChange} required />
-            </div>
-            <div className="modal-form-group">
-              <label htmlFor="reprezentantVigilent">Reprezentant Vigilent (Primire)</label>
-              <select
-                id="reprezentantVigilent"
-                name="reprezentantVigilent"
-                value={formData.reprezentantVigilent}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Selectează un angajat --</option>
-                {/* CORECȚIE: Măsură defensivă pentru paznici.map */}
-                {Array.isArray(paznici) && paznici.map((p) => ( 
-                  <option key={p._id} value={p._id}>
-                    {p.nume} {p.prenume}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="modal-form-group">
-              <label htmlFor="nume_reprezentant_primire">Nume Reprezentant Firmă Beneficiar</label>
-              <input id="nume_reprezentant_primire" type="text" name="nume_reprezentant_primire" value={formData.nume_reprezentant_primire} onChange={handleChange} placeholder="Ex: Ionescu Vasile" required />
-            </div>
-            <div className="modal-form-group">
-              <label htmlFor="reprezentantBeneficiar">Firmă Beneficiar</label>
-              <select id="reprezentantBeneficiar" name="reprezentantBeneficiar" value={formData.reprezentantBeneficiar} onChange={handleChange} required>
-                <option value="">-- Selectează --</option>
-                {/* CORECȚIE: Măsură defensivă pentru beneficiari.map */}
-                {Array.isArray(beneficiari) && beneficiari.map((b) => (
-                    // CORECȚIE: Folosim b._id ca valoare și nume_companie pentru afișare
-                    <option key={b._id} value={b._id}>
-                        {b.profile?.nume_companie} - {b.nume} {b.prenume}
-                    </option>
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSaveSignature = (signature) => {
+    setFormData((prev) => ({ ...prev, signatureDataURL: signature }));
+    setSignatureSaved(true);
+    alert("Semnătura a fost salvată. Puteți încheia tura.");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!formData.signatureDataURL) {
+      alert("EROARE: Trebuie să semnați procesul verbal înainte de a încheia tura!");
+      return;
+    }
+
+    // Spring LocalDateTime e mai safe cu secunde
+    const dt =
+      formData.dataIncheierii && formData.dataIncheierii.length === 16
+        ? `${formData.dataIncheierii}:00`
+        : formData.dataIncheierii;
+
+    const payload = {
+      pontajId: pontajId,
+      dataIncheierii: dt,
+      numeReprezentantPrimire: formData.numeReprezentantPrimire,
+      obiectePredate: formData.obiectePredate,
+      reprezentantBeneficiar: formData.reprezentantBeneficiar, // string
+      reprezentantVigilentId: Number(formData.reprezentantVigilentId), // Long
+    };
+
+    onSubmit(payload);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <form onSubmit={handleSubmit}>
+          <h2>Proces Verbal de Predare-Primire</h2>
+
+          <fieldset disabled={signatureSaved}>
+            <div className="modal-form-group">
+              <label htmlFor="dataIncheierii">Data și Ora Încheierii</label>
+              <input
+                id="dataIncheierii"
+                type="datetime-local"
+                name="dataIncheierii"
+                value={formData.dataIncheierii}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="modal-form-group">
+              <label htmlFor="reprezentantVigilentId">Reprezentant Vigilent (Primire)</label>
+              <select
+                id="reprezentantVigilentId"
+                name="reprezentantVigilentId"
+                value={formData.reprezentantVigilentId}
+                onChange={handleChange}
+                required
+              >
+                <option value="">-- Selectează un angajat --</option>
+                {paznici.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nume} {p.prenume}
+                  </option>
                 ))}
-              </select>
-            </div>
-            <div className="modal-form-group">
-              <label htmlFor="obiecte_predate">Obiecte / Sarcini Predate</label>
-              <textarea id="obiecte_predate" name="obiecte_predate" value={formData.obiecte_predate} onChange={handleChange} rows="5" placeholder="Descrieți pe scurt ce se predă..." required></textarea>
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend>Semnătură Predare</legend>
-            {!signatureSaved ? (
-                <SignaturePadWrapper onSave={handleSaveSignature} />
-            ) : (
-                <div style={{textAlign: 'center'}}><p style={{color: 'green', fontWeight: 'bold'}}>✓ Semnat</p><img src={formData.signatureDataURL} alt="Semnatura" style={{border: '1px solid #ccc', borderRadius: '5px', maxWidth: '200px'}} /></div>
-            )}
-          </fieldset>
-          <div className="modal-actions">
-            <button type="button" className="cancel-btn" onClick={onCancel} disabled={loading}>Anulează</button>
-            <button type="submit" className="submit-pv-btn" disabled={loading || !signatureSaved}>{loading ? "Se procesează..." : "Salvează și Încheie Tura"}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+              </select>
+            </div>
+
+            <div className="modal-form-group">
+              <label htmlFor="numeReprezentantPrimire">Nume Reprezentant Firmă Beneficiar</label>
+              <input
+                id="numeReprezentantPrimire"
+                type="text"
+                name="numeReprezentantPrimire"
+                value={formData.numeReprezentantPrimire}
+                onChange={handleChange}
+                placeholder="Ex: Ionescu Vasile"
+                required
+              />
+            </div>
+
+            <div className="modal-form-group">
+              <label htmlFor="reprezentantBeneficiar">Firmă Beneficiar</label>
+              <select
+                id="reprezentantBeneficiar"
+                name="reprezentantBeneficiar"
+                value={formData.reprezentantBeneficiar}
+                onChange={handleChange}
+                required
+              >
+                <option value="">-- Selectează --</option>
+                {beneficiari.map((b) => {
+                  // ideal: b.numeCompanie (ai câmp în SimpleUserDTO)
+                  const numeCompanie = b.numeCompanie || b.profile?.nume_companie || "";
+                  return (
+                    <option key={b.id} value={numeCompanie}>
+                      {numeCompanie} - {b.nume} {b.prenume}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="modal-form-group">
+              <label htmlFor="obiectePredate">Obiecte / Sarcini Predate</label>
+              <textarea
+                id="obiectePredate"
+                name="obiectePredate"
+                value={formData.obiectePredate}
+                onChange={handleChange}
+                rows="5"
+                placeholder="Descrieți pe scurt ce se predă..."
+                required
+              />
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Semnătură Predare</legend>
+            {!signatureSaved ? (
+              <SignaturePadWrapper onSave={handleSaveSignature} />
+            ) : (
+              <div style={{ textAlign: "center" }}>
+                <p style={{ color: "green", fontWeight: "bold" }}>✓ Semnat</p>
+                <img
+                  src={formData.signatureDataURL}
+                  alt="Semnatura"
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                    maxWidth: "200px",
+                  }}
+                />
+              </div>
+            )}
+          </fieldset>
+
+          <div className="modal-actions">
+            <button type="button" className="cancel-btn" onClick={onCancel} disabled={loading}>
+              Anulează
+            </button>
+            <button type="submit" className="submit-pv-btn" disabled={loading || !signatureSaved}>
+              {loading ? "Se procesează..." : "Salvează și Încheie Tura"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
-// --- Componenta Principală PontarePage (Actualizată) ---
+// --- Pagina principală ---
 export default function PontarePage() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [activePontaj, setActivePontaj] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [activePontaj, setActivePontaj] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchActivePontaj = async () => {
-      setLoading(true);
-      try {
-        const { data } = await apiClient.get("/pontaj/active");
-        setActivePontaj(data);
-      } catch (error) {
-        setMessage("Eroare la preluarea statusului turei.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchActivePontaj();
-  }, []);
+  useEffect(() => {
+    const fetchActivePontaj = async () => {
+      setLoading(true);
+      try {
+        const { data } = await apiClient.get("/pontaj/active");
+        setActivePontaj(data);
+      } catch {
+        setMessage("Eroare la preluarea statusului turei.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchActivePontaj();
+  }, []);
 
-  const handleIncepeTura = () => {
-    setLoading(true);
-    setMessage("");
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const { data } = await apiClient.post("/pontaj/check-in", { latitude, longitude });
-          setActivePontaj(data.pontaj);
-          setMessage(`✅ ${data.message}`);
-        } catch (err) {
-          setMessage(`❌ ${err.response?.data?.message || "Eroare la check-in."}`);
-        } finally {
-          setLoading(false);
-        }
-      },
-      () => {
-        setMessage("❌ Nu se poate începe tura. Permiteți accesul la locație.");
-        setLoading(false);
-      }
-    );
-  };
+  const handleIncepeTura = () => {
+    setLoading(true);
+    setMessage("");
 
-  const handleFinalizeShift = async (procesVerbalData) => {
-    setLoading(true);
-    setMessage("Se salvează procesul verbal...");
-    try {
-      
-      // 1. Salvare Proces Verbal Predare-Primire
-      await apiClient.post("/proces-verbal-predare/create", procesVerbalData);
-      setMessage("Proces verbal salvat. Se încheie tura...");
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const { data } = await apiClient.post("/pontaj/check-in", { latitude, longitude });
+          setActivePontaj(data.pontaj);
+          setMessage(`✅ ${data.message}`);
+        } catch (err) {
+          setMessage(`❌ ${err.response?.data?.message || "Eroare la check-in."}`);
+        } finally {
+          setLoading(false);
+        }
+      },
+      () => {
+        setMessage("❌ Nu se poate începe tura. Permiteți accesul la locație.");
+        setLoading(false);
+      }
+    );
+  };
 
-      // 2. Check-out Pontaj
-      const { data: checkoutData } = await apiClient.post("/pontaj/check-out");
+  const handleFinalizeShift = async (procesVerbalData) => {
+    setLoading(true);
+    setMessage("Se salvează procesul verbal...");
 
-      setActivePontaj(null);
-      setIsModalOpen(false);
-      setMessage(`✅ ${checkoutData.message}`);
-    } catch (err) {
-      setMessage(`❌ ${err.response?.data?.message || "A apărut o eroare."}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+    try {
+      await apiClient.post("/proces-verbal-predare/create", procesVerbalData);
+      setMessage("Proces verbal salvat. Se încheie tura...");
 
-  return (
-    <div className="pontare-page">
-      {isModalOpen && activePontaj && (
-        <ProcesVerbalModal 
-            pontajId={activePontaj._id} 
-            onCancel={() => setIsModalOpen(false)} 
-            onSubmit={handleFinalizeShift} 
-            loading={loading} 
+      const { data: checkoutData } = await apiClient.post("/pontaj/check-out");
+
+      setActivePontaj(null);
+      setIsModalOpen(false);
+      setMessage(`✅ ${checkoutData.message}`);
+    } catch (err) {
+      setMessage(`❌ ${err.response?.data?.message || "A apărut o eroare."}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="pontare-page">
+      {isModalOpen && activePontaj && (
+        <ProcesVerbalModal
+          pontajId={activePontaj.id}
+          onCancel={() => setIsModalOpen(false)}
+          onSubmit={handleFinalizeShift}
+          loading={loading}
         />
-      )}
-      <div className="pontare-container">
-        <h2>Pontare</h2>
-        <div className="pontaj-info">
-                    {activePontaj ? (
-                        <p><b>Tură activă începută la:</b> {new Date(activePontaj.ora_intrare).toLocaleString('ro-RO')}</p>
-                    ) : (
-            <p>Nu aveți nicio tură activă.</p>
-          )}
-        </div>
-        <div className="buttons">
-          <button className="start-btn" onClick={handleIncepeTura} disabled={loading || activePontaj}>Începe Tura</button>
-          <button className="end-btn" onClick={() => setIsModalOpen(true)} disabled={loading || !activePontaj}>Termină Tura</button>
-        </div>
-        {loading && !isModalOpen && <p>Se procesează...</p>}
-        {message && (<div className="pontaj-info"><p><b>Status:</b> {message}</p></div>)}
-        <button className="back-btn" onClick={() => navigate("/")}>Înapoi la Dashboard</button>
-      </div>
-    </div>
-  );
+      )}
+
+      <div className="pontare-container">
+        <h2>Pontare</h2>
+
+        <div className="pontaj-info">
+          {activePontaj ? (
+            <p>
+              <b>Tură activă începută la:</b>{" "}
+              {new Date(activePontaj.oraIntrare).toLocaleString("ro-RO")}
+            </p>
+          ) : (
+            <p>Nu aveți nicio tură activă.</p>
+          )}
+        </div>
+
+        <div className="buttons">
+          <button className="start-btn" onClick={handleIncepeTura} disabled={loading || activePontaj}>
+            Începe Tura
+          </button>
+          <button className="end-btn" onClick={() => setIsModalOpen(true)} disabled={loading || !activePontaj}>
+            Termină Tura
+          </button>
+        </div>
+
+        {loading && !isModalOpen && <p>Se procesează...</p>}
+        {message && (
+          <div className="pontaj-info">
+            <p>
+              <b>Status:</b> {message}
+            </p>
+          </div>
+        )}
+
+        <button className="back-btn" onClick={() => navigate("/")}>
+          Înapoi la Dashboard
+        </button>
+      </div>
+    </div>
+  );
 }

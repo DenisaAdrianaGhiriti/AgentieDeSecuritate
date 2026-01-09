@@ -9,7 +9,6 @@ import com.securitate.agentie.backend.repository.UserRepository;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
 import java.io.FileOutputStream;
@@ -28,15 +27,17 @@ public class RaportEvenimentService {
     private final UserRepository userRepository;
     private final PontajRepository pontajRepository;
 
-    // --- Fonturi OpenPDF ---
     private static final Font FONT_NORMAL = new Font(Font.HELVETICA, 10, Font.NORMAL);
     private static final Font FONT_BOLD = new Font(Font.HELVETICA, 10, Font.BOLD);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-    // ------------------------
 
     private final Path pdfRootDir = Paths.get("uploads/rapoarte-evenimente");
 
-    public RaportEvenimentService(RaportEvenimentRepository raportEvenimentRepository, UserRepository userRepository, PontajRepository pontajRepository) {
+    public RaportEvenimentService(
+            RaportEvenimentRepository raportEvenimentRepository,
+            UserRepository userRepository,
+            PontajRepository pontajRepository
+    ) {
         this.raportEvenimentRepository = raportEvenimentRepository;
         this.userRepository = userRepository;
         this.pontajRepository = pontajRepository;
@@ -49,19 +50,54 @@ public class RaportEvenimentService {
         }
     }
 
-    public RaportEveniment createRaportEveniment(RaportEvenimentRequest request, User paznicLogat) throws IOException {
+    /**
+     * ✅ Returnează DTO (nu entitatea JPA) ca să evităm LazyInitializationException la serializare JSON.
+     */
+    public RaportEvenimentResponse createRaportEveniment(RaportEvenimentRequest request, User paznicLogat) throws IOException {
+        if (paznicLogat == null) {
+            throw new IllegalStateException("Utilizator neautentificat.");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Request invalid (null).");
+        }
+        if (request.getBeneficiaryId() == null) {
+            throw new IllegalArgumentException("BeneficiaryId este obligatoriu.");
+        }
+
+        // Beneficiar
         User beneficiary = userRepository.findById(request.getBeneficiaryId())
                 .orElseThrow(() -> new IllegalArgumentException("Beneficiarul nu a fost găsit."));
 
+        // Tură activă
         if (pontajRepository.findByPaznicAndOraIesireIsNull(paznicLogat).isEmpty()) {
             throw new IllegalStateException("Nu aveți o tură activă pentru a genera documente.");
         }
 
-        if (request.getPunctDeLucru() == null || request.getPunctDeLucru().trim().isEmpty()) {
-            throw new IllegalArgumentException("Câmpul 'La postul Nr.' este obligatoriu.");
+        // Validări request
+        requireNotBlank(request.getPunctDeLucru(), "Câmpul 'La postul Nr.' este obligatoriu.");
+        if (request.getDataRaport() == null) {
+            throw new IllegalArgumentException("Câmpul 'Data raport' este obligatoriu.");
         }
+        if (request.getDataConstatare() == null) {
+            throw new IllegalArgumentException("Câmpul 'Data constatăre' este obligatoriu.");
+        }
+        requireNotBlank(request.getFunctiePaznic(), "Câmpul 'Funcția' este obligatoriu.");
+        requireNotBlank(request.getOraConstatare(), "Câmpul 'Ora constatării' este obligatoriu.");
+        requireNotBlank(request.getDescriereFapta(), "Câmpul 'Descrierea faptei/evenimentului' este obligatoriu.");
+        requireNotBlank(request.getCazSesizatLa(), "Câmpul 'Caz sesizat la' este obligatoriu.");
 
-        // --- Generare PDF (Simplificat) ---
+        // Societate (obligatoriu în DB)
+        if (beneficiary.getProfile() == null) {
+            throw new IllegalStateException("Beneficiarul nu are profil completat (profile lipsă).");
+        }
+        String societate = beneficiary.getProfile().getNumeFirma();
+        requireNotBlank(societate, "Beneficiarul nu are completat 'Nume firmă' în profil.");
+
+        // Convert LocalDate -> LocalDateTime (entity are LocalDateTime)
+        LocalDateTime dataRaportLdt = request.getDataRaport().atStartOfDay();
+        LocalDateTime dataConstatareLdt = request.getDataConstatare().atStartOfDay();
+
+        // --- Generare PDF ---
         String fileName = "RE_" + paznicLogat.getId() + "_" + System.currentTimeMillis() + ".pdf";
         Path filePath = this.pdfRootDir.resolve(fileName);
         String caleStocareRelativa = "/uploads/rapoarte-evenimente/" + fileName;
@@ -72,38 +108,45 @@ public class RaportEvenimentService {
             PdfWriter.getInstance(document, new FileOutputStream(filePath.toString()));
             document.open();
 
-            // Titlu
-            Paragraph titlu = new Paragraph("RAPORT DE EVENIMENT", new Font(Font.HELVETICA, 14, Font.BOLD, Color.RED));
+            Paragraph titlu = new Paragraph(
+                    "RAPORT DE EVENIMENT",
+                    new Font(Font.HELVETICA, 14, Font.BOLD, Color.RED)
+            );
             titlu.setAlignment(Element.ALIGN_CENTER);
             document.add(titlu);
             document.add(new Paragraph("\n"));
 
-            // Numar/Data
-            Paragraph p1 = new Paragraph("Nr. Raport: " + (request.getNumarRaport() != null ? request.getNumarRaport() : "Nespecificat")
-                    + ", Data: " + DATE_FORMATTER.format(request.getDataRaport()), FONT_NORMAL);
+            Paragraph p1 = new Paragraph(
+                    "Nr. Raport: " + (request.getNumarRaport() != null ? request.getNumarRaport() : "Nespecificat")
+                            + ", Data: " + DATE_FORMATTER.format(request.getDataRaport()),
+                    FONT_NORMAL
+            );
             p1.setAlignment(Element.ALIGN_CENTER);
             document.add(p1);
             document.add(new Paragraph("\n"));
 
-            // Paznic
             document.add(new Paragraph("Subsemnatul/a: " + paznicLogat.getNume() + " " + paznicLogat.getPrenume(), FONT_NORMAL));
-            document.add(new Paragraph("Funcția: " + request.getFunctiePaznic(), FONT_NORMAL));
-            document.add(new Paragraph("Societatea: " + beneficiary.getProfile().getNumeFirma(), FONT_NORMAL));
-            document.add(new Paragraph("La postul Nr.: " + request.getPunctDeLucru(), FONT_NORMAL));
-            document.add(new Paragraph("Data și ora constatării: " + DATE_FORMATTER.format(request.getDataConstatare()) + " ora " + request.getOraConstatare(), FONT_NORMAL));
-            document.add(new Paragraph("Numele faptuitorului (dacă este cazul): " + request.getNumeFaptuitor(), FONT_NORMAL));
+            document.add(new Paragraph("Funcția: " + request.getFunctiePaznic().trim(), FONT_NORMAL));
+            document.add(new Paragraph("Societatea: " + societate.trim(), FONT_NORMAL));
+            document.add(new Paragraph("La postul Nr.: " + request.getPunctDeLucru().trim(), FONT_NORMAL));
+
+            document.add(new Paragraph(
+                    "Data și ora constatării: " + DATE_FORMATTER.format(request.getDataConstatare())
+                            + " ora " + request.getOraConstatare().trim(),
+                    FONT_NORMAL
+            ));
+
+            String faptuitor = request.getNumeFaptuitor() != null ? request.getNumeFaptuitor() : "";
+            document.add(new Paragraph("Numele făptuitorului (dacă este cazul): " + faptuitor, FONT_NORMAL));
             document.add(new Paragraph("\n"));
 
-            // Descriere
             document.add(new Paragraph("Descrierea faptei/evenimentului:", FONT_BOLD));
             document.add(new Paragraph(request.getDescriereFapta(), FONT_NORMAL));
             document.add(new Paragraph("\n"));
 
-            // Masuri
             document.add(new Paragraph("Caz sesizat la (Poliție/Pompieri/etc.): " + request.getCazSesizatLa(), FONT_NORMAL));
             document.add(new Paragraph("\n\n"));
 
-            // Semnătură
             Paragraph semnatura = new Paragraph("Semnătura: ______________________", FONT_NORMAL);
             semnatura.setAlignment(Element.ALIGN_LEFT);
             document.add(semnatura);
@@ -115,33 +158,78 @@ public class RaportEvenimentService {
                 document.close();
             }
         }
-        // --- End Generare PDF ---
 
-        // Salvare în baza de date
+        // --- Salvare în DB ---
         RaportEveniment newRaport = new RaportEveniment();
         newRaport.setPaznic(paznicLogat);
         newRaport.setBeneficiary(beneficiary);
-        newRaport.setPunctDeLucru(request.getPunctDeLucru());
+
+        newRaport.setPunctDeLucru(request.getPunctDeLucru().trim());
         newRaport.setNumarRaport(request.getNumarRaport());
-        newRaport.setDataRaport(request.getDataRaport());
+
+        newRaport.setDataRaport(dataRaportLdt);
+        newRaport.setDataConstatare(dataConstatareLdt);
+
         newRaport.setNumePaznic(paznicLogat.getNume() + " " + paznicLogat.getPrenume());
-        newRaport.setFunctiePaznic(request.getFunctiePaznic());
-        newRaport.setSocietate(beneficiary.getProfile().getNumeFirma());
-        newRaport.setDataConstatare(request.getDataConstatare());
-        newRaport.setOraConstatare(request.getOraConstatare());
+        newRaport.setFunctiePaznic(request.getFunctiePaznic().trim());
+        newRaport.setSocietate(societate.trim());
+        newRaport.setOraConstatare(request.getOraConstatare().trim());
         newRaport.setNumeFaptuitor(request.getNumeFaptuitor());
         newRaport.setDescriereFapta(request.getDescriereFapta());
         newRaport.setCazSesizatLa(request.getCazSesizatLa());
         newRaport.setCaleStocarePDF(caleStocareRelativa);
-        // dataExpirare este setată automat în @PrePersist
 
-        return raportEvenimentRepository.save(newRaport);
+        RaportEveniment saved = raportEvenimentRepository.save(newRaport);
+
+        // ✅ DTO response (evită serializarea entităților lazy)
+        return new RaportEvenimentResponse(
+                saved.getId(),
+                saved.getNumarRaport(),
+                saved.getPunctDeLucru(),
+                saved.getCaleStocarePDF(),
+                saved.getCreatedAt()
+        );
     }
 
-
-    // Păstrează getDocumente() pentru listing, dacă este necesar
+    /**
+     * ⚠️ Dacă folosești și acest endpoint, recomand să nu returnezi entități direct,
+     * ci tot DTO-uri (altfel vei avea aceeași problemă cu LAZY).
+     *
+     * Pentru moment, îl las, dar ideal creezi un DTO list.
+     */
     public List<RaportEveniment> getDocumente() {
         return raportEvenimentRepository.findAll();
     }
 
+    private static void requireNotBlank(String value, String message) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * DTO simplu pentru răspuns (fără relații JPA).
+     * Dacă preferi, îl mutăm într-un fișier separat în package dto.
+     */
+    public static class RaportEvenimentResponse {
+        private final Long id;
+        private final String numarRaport;
+        private final String punctDeLucru;
+        private final String caleStocarePDF;
+        private final LocalDateTime createdAt;
+
+        public RaportEvenimentResponse(Long id, String numarRaport, String punctDeLucru, String caleStocarePDF, LocalDateTime createdAt) {
+            this.id = id;
+            this.numarRaport = numarRaport;
+            this.punctDeLucru = punctDeLucru;
+            this.caleStocarePDF = caleStocarePDF;
+            this.createdAt = createdAt;
+        }
+
+        public Long getId() { return id; }
+        public String getNumarRaport() { return numarRaport; }
+        public String getPunctDeLucru() { return punctDeLucru; }
+        public String getCaleStocarePDF() { return caleStocarePDF; }
+        public LocalDateTime getCreatedAt() { return createdAt; }
+    }
 }

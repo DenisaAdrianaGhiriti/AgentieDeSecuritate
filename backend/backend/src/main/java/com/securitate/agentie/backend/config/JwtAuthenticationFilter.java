@@ -76,7 +76,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             // Dacă token-ul e invalid (expirat, malformat etc.), lăsăm contextul gol
             // Spring Security va arunca 401 sau 403 mai târziu
-            logger.warn("Nu s-a putut procesa token-ul JWT: " + e.getMessage());
+//            logger.warn("Nu s-a putut procesa token-ul JWT: " + e.getMessage());
+            logger.warn("Nu s-a putut procesa token-ul JWT", e);
         }
 
         // Trecem la următorul filtru din lanț

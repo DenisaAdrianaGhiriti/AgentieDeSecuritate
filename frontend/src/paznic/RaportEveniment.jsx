@@ -54,10 +54,12 @@ export default function RaportEveniment() {
     
     // CORECȚIE: Verificăm că este un array înainte de a folosi find
     if (Array.isArray(beneficiariCuPuncte)) {
-        const beneficiarSelectat = beneficiariCuPuncte.find(b => b.beneficiarId === selectedId); 
-        setPuncteFiltrate(beneficiarSelectat ? beneficiarSelectat.puncteDeLucru : []);
+      const beneficiarSelectat = beneficiariCuPuncte.find(
+        b => String(b.beneficiarId) === selectedId
+      );
+      setPuncteFiltrate(beneficiarSelectat ? beneficiarSelectat.puncteDeLucru : []);
     } else {
-        setPuncteFiltrate([]);
+      setPuncteFiltrate([]);
     }
   };
 
@@ -120,7 +122,7 @@ export default function RaportEveniment() {
                     >
                         <option value="">-- Alege o firmă --</option>
                         {Array.isArray(beneficiariCuPuncte) && beneficiariCuPuncte.map(b => ( 
-                            <option key={b.beneficiarId} value={b.beneficiarId}>{b.numeCompanie}</option>
+                            <option key={b.beneficiarId} value={String(b.beneficiarId)}>{b.numeCompanie}</option>
                         ))}
                     </select>
                 </div>

@@ -57,9 +57,9 @@ public class ProcesVerbalPredarePrimireService {
         Pontaj pontaj = pontajRepository.findById(request.getPontajId())
                 .orElseThrow(() -> new IllegalArgumentException("Pontajul asociat nu a fost găsit."));
 
-        if (pvprRepository.findByPontaj(pontaj).isPresent()) {
-            throw new IllegalArgumentException("Procesul verbal pentru această tură a fost deja creat.");
-        }
+//        if (pvprRepository.findByPontaj(pontaj).isPresent()) {
+//            throw new IllegalArgumentException("Procesul verbal pentru această tură a fost deja creat.");
+//        }
 
         User reprezentantVigilent = userRepository.findById(request.getReprezentantVigilentId())
                 .orElseThrow(() -> new IllegalArgumentException("Reprezentantul Vigilent nu a fost găsit."));
@@ -138,7 +138,7 @@ public class ProcesVerbalPredarePrimireService {
     }
 
 //    @Transactional
-//    public int deleteExpirate() {
+//    public int deleteExpirate() {+
 //        List<ProcesVerbalPredarePrimire> expirate = pvprRepository.findByDataExpirareBefore(LocalDateTime.now());
 //        pvprRepository.deleteAll(expirate);
 //        return expirate.size();

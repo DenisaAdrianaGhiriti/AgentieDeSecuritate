@@ -22,6 +22,9 @@ public class RaportEveniment {
     @Column(nullable = false)
     private String punctDeLucru; // Corespunde cu "numarPost" din Node.js
 
+    @Column(nullable = false)
+    private LocalDateTime dataExpirare;
+
     private String numarRaport;
 
     @Column(nullable = false)
@@ -65,7 +68,7 @@ public class RaportEveniment {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-//        dataExpirare = LocalDateTime.now().plusDays(60);
+        dataExpirare = LocalDateTime.now().plusDays(60);
     }
     @PreUpdate
     protected void onUpdate() { updatedAt = LocalDateTime.now(); }
@@ -110,4 +113,8 @@ public class RaportEveniment {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getDataExpirare() { return dataExpirare; }
+    public void setDataExpirare(LocalDateTime dataExpirare) { this.dataExpirare = dataExpirare; }
+
 }

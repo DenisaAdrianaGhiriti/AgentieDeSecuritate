@@ -48,12 +48,12 @@ export default function AngajatiB() {
           <tbody>
             {angajati.length > 0 ? (
               angajati.map((a) => (
-                <tr key={a._id}> {/* CORECȚIE: Folosim a.id */}
+                <tr key={a.id}> {/* CORECȚIE: Folosim a.id */}
                   <td>{a.nume}</td>
                   <td>{a.prenume}</td>
                   <td>{a.email}</td>
                   <td>
-                    <Link to={`/angajatiB/${a._id}`} className="detalii-btn"> {/* CORECȚIE: Folosim a.id */}
+                    <Link to={`/angajatiB/${a.id}`} className="detalii-btn"> {/* CORECȚIE: Folosim a.id */}
                       Vezi Detalii
                     </Link>
                   </td>

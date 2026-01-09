@@ -14,47 +14,38 @@ export default function AngajatBDetalii() {
   const paznicId = Number(id);
 
   useEffect(() => {
-    const fetchDetalii = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        // Obținem simultan detaliile angajatului și ale beneficiarului logat
-        const [angajatRes, beneficiarRes] = await Promise.all([
-          // GET /users/{id} (pentru a obține detaliile paznicului)
-          apiClient.get(`/users/${paznicId}`),
-          // GET /users/profile (pentru a obține assignedPazniciItems ale Beneficiarului)
-          apiClient.get('/users/profile') 
-        ]);
+  const fetchDetalii = async () => {
+    setLoading(true);
+    setError("");
 
-        const angajatData = angajatRes.data;
-        const beneficiarData = beneficiarRes.data;
-        
-        setAngajat(angajatData);
+    try {
+      const angajatRes = await apiClient.get(`/users/${paznicId}`);
+      setAngajat(angajatRes.data);
 
-        // CORECȚIE LOGICĂ DE ALOCARE (pe baza AssignedPazniciItem din Spring):
-        // BeneficiarulData.assignedPazniciItems este o listă de AssignedPazniciItem
-        // Fiecare Item are: { id, punct, paznici: [User1, User2, ...] }
-        
-        // Căutăm Item-ul în care lista 'paznici' conține User-ul cu ID-ul nostru.
-        const assignedItems = beneficiarData.profile?.assignedPaznici || [];
+      try {
+        const beneficiarRes = await apiClient.get("/users/profile");
+        const beneficiarData = beneficiarRes.data;
 
-        const assignedItemGasit = assignedItems
-          .find(item => 
-            // Căutăm în lista 'paznici' (obiecte User) dacă există un ID care se potrivește
-            item.paznici.some(paznicObjectId => paznicObjectId === paznicId)
-          );
-          
-        // Proprietatea punct este deja camelCase
-        setPunctLucru(assignedItemGasit ? assignedItemGasit.punct : "Nespecificat"); 
-      } catch (err) {
-        setError(err.response?.data?.message || "Eroare la încărcarea detaliilor.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    // Folosim paznicId în dependențe, deoarece e o valoare derivată din id
-    fetchDetalii(); 
-  }, [paznicId, navigate]);
+        const assignedItems = beneficiarData.profile?.assignedPaznici || [];
+        const assignedItemGasit = assignedItems.find(item =>
+          (item.paznici || []).some(p => (typeof p === "object" ? p.id : p) === paznicId)
+        );
+
+        setPunctLucru(assignedItemGasit ? assignedItemGasit.punct : "Nespecificat");
+      } catch {
+        // dacă /profile nu merge, nu mai blocăm toată pagina
+        setPunctLucru("Nespecificat");
+      }
+
+    } catch (err) {
+      setError(err.response?.data?.message || "Eroare la încărcarea detaliilor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDetalii();
+}, [paznicId]);
 
   if (loading) return <div style={{textAlign: 'center', padding: '50px'}}>Se încarcă...</div>;
   if (error) return <div style={{textAlign: 'center', padding: '50px', color: 'red'}}>{error}</div>;

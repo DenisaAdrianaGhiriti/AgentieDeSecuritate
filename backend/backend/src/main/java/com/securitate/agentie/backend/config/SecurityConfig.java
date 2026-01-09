@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -32,89 +33,153 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   CorsConfigurationSource corsConfigurationSource,
-                                                   AuthenticationProvider authenticationProvider,
-                                                   JwtAuthenticationFilter jwtAuthFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            CorsConfigurationSource corsConfigurationSource,
+            AuthenticationProvider authenticationProvider,
+            JwtAuthenticationFilter jwtAuthFilter
+    ) throws Exception {
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // Permite explicit TOATE cererile OPTIONS (preflight)
+                        // ✅ Preflight (CORS)
                         .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
 
-                        // Auth public
+                        // ✅ Auth public
                         .requestMatchers(antMatcher("/api/auth/**")).permitAll()
 
-                        // /api/users
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/users/create")).hasAnyRole("ADMIN", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/list/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/users/create-admin")).hasRole("ADMINISTRATOR")
+                        // =========================================================
+                        // ✅ USERS
+                        // =========================================================
 
-                        // /api/posts
-                        .requestMatchers(antMatcher("/api/posts/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        // Beneficiar: profilul lui
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/profile"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/profile/**"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
 
-                        // /api/pontaj
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/pontaj/check-in")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/pontaj/check-out")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher("/api/pontaj/**")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
+                        // Beneficiar: angajați alocați
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/beneficiar/angajati"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
 
-                        // /api/proces-verbal
-                        .requestMatchers(antMatcher("/api/proces-verbal/**")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
+                        // Create / list admin stuff
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/users/create"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/list/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/users/create-admin"))
+                        .hasAnyAuthority("ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
-                        // /api/users (update/delete)
-                        .requestMatchers(antMatcher(HttpMethod.PUT, "/api/users/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.DELETE, "/api/users/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/paznici")).hasAnyRole("ADMIN", "ADMINISTRATOR", "PAZNIC")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/beneficiari")).hasAnyRole("ADMIN", "ADMINISTRATOR", "PAZNIC")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/beneficiar/angajati")).hasRole("BENEFICIAR")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/{id}")).hasAnyRole("ADMIN", "ADMINISTRATOR", "BENEFICIAR")
+                        // Update / delete
+                        .requestMatchers(antMatcher(HttpMethod.PUT, "/api/users/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.DELETE, "/api/users/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
-                        // /api/assignments
-                        .requestMatchers(antMatcher("/api/assignments/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        // Liste simple
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/paznici"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_PAZNIC", "PAZNIC")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/users/beneficiari"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_PAZNIC", "PAZNIC")
 
-                        // /api/pontaj (tracking/istoric)
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/pontaj/update-location")).hasRole("PAZNIC")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/locatie/**")).hasAnyRole("ADMIN", "ADMINISTRATOR", "BENEFICIAR")
-                        .requestMatchers(antMatcher("/api/pontaj/angajati-activi")).hasAnyRole("ADMIN", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher("/api/pontaj/angajati-activi-beneficiar")).hasRole("BENEFICIAR")
-                        .requestMatchers(antMatcher("/api/pontaj/istoric-60zile")).hasAnyRole("ADMIN", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher("/api/pontaj/istoric-60zile-beneficiar")).hasRole("BENEFICIAR")
-                        .requestMatchers(antMatcher("/api/pontaj/active")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
+                        // ✅ User by id - DOAR numeric (evită conflictul cu /profile)
+                        .requestMatchers(new RegexRequestMatcher("^/api/users/\\d+$", "GET"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_BENEFICIAR", "BENEFICIAR")
 
-                        // /api/proces-verbal-predare
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/proces-verbal-predare/create")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/proces-verbal-predare/documente")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        // =========================================================
+                        // ✅ POSTS
+                        // =========================================================
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/posts/my-assigned-workpoints"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher("/api/posts/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
-                        // /api/raport-eveniment
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/raport-eveniment/create")).hasAnyRole("PAZNIC", "ADMINISTRATOR")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/raport-eveniment/documente")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        // =========================================================
+                        // ✅ PONTAJ (SPECIFICE înainte de /**)
+                        // =========================================================
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/pontaj/update-location"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC")
 
-                        // /api/sesizari
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/sesizari")).hasRole("BENEFICIAR")
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/sesizari/beneficiar")).hasRole("BENEFICIAR")
-                        .requestMatchers(antMatcher("/api/sesizari/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/locatie/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_BENEFICIAR", "BENEFICIAR")
 
-                        // /api/incidente
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/incidente/beneficiar")).hasRole("BENEFICIAR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/angajati-activi"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
-                        // IMPORTANT: /api/incidente (fără slash) trebuie permis separat
-                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/incidente")).hasAnyRole("ADMIN", "ADMINISTRATOR", "PAZNIC")
-                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/incidente")).hasAnyRole("ADMIN", "ADMINISTRATOR", "PAZNIC")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/istoric-60zile"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
-                        // restul sub-rutelor (/api/incidente/..., ex: /istoric, /{id}/restabilire, etc.)
-                        .requestMatchers(antMatcher("/api/incidente/**")).hasAnyRole("ADMIN", "ADMINISTRATOR", "PAZNIC")
-                        // /api/cleanup
-                        .requestMatchers(antMatcher("/api/cleanup/**")).hasAnyRole("ADMIN", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/angajati-activi-beneficiar"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
+
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/istoric-60zile-beneficiar"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
+
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/pontaj/active"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/pontaj/check-in"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/pontaj/check-out"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+
+                        // fallback pontaj
+                        .requestMatchers(antMatcher("/api/pontaj/**"))
+                        .hasAnyAuthority(
+                                "ROLE_PAZNIC", "PAZNIC",
+                                "ROLE_ADMIN", "ADMIN",
+                                "ROLE_ADMINISTRATOR", "ADMINISTRATOR",
+                                "ROLE_BENEFICIAR", "BENEFICIAR"
+                        )
+
+                        // =========================================================
+                        // ✅ PROCESE / RAPOARTE
+                        // =========================================================
+                        .requestMatchers(antMatcher("/api/proces-verbal/**"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/proces-verbal-predare/create"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/proces-verbal-predare/documente"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/raport-eveniment/create"))
+                        .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/raport-eveniment/documente"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+
+                        // =========================================================
+                        // ✅ SESIZARI / INCIDENTE / CLEANUP
+                        // =========================================================
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/sesizari"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/sesizari/beneficiar"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
+                        .requestMatchers(antMatcher("/api/sesizari/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
+
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/incidente/beneficiar"))
+                        .hasAnyAuthority("ROLE_BENEFICIAR", "BENEFICIAR")
+
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/incidente"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_PAZNIC", "PAZNIC")
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/api/incidente"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_PAZNIC", "PAZNIC")
+
+                        .requestMatchers(antMatcher("/api/incidente/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR", "ROLE_PAZNIC", "PAZNIC")
+
+                        .requestMatchers(antMatcher("/api/cleanup/**"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
                         .anyRequest().authenticated()
                 )
-
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -138,34 +203,26 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public AuthenticationProvider authenticationProvider(
+            UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder
+    ) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
-    // ✅ CORS FIX: adăugat PATCH + headers pentru preflight
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Origin", "Accept"));
 
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
-        ));
-
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization", "Content-Type", "X-Requested-With", "Origin", "Accept"
-        ));
-
-        // opțional: dacă vrei să citești header-ul Authorization din response
         configuration.setExposedHeaders(List.of("Authorization"));
-
         configuration.setAllowCredentials(true);
-
-        // opțional: cache pentru preflight (1 oră)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

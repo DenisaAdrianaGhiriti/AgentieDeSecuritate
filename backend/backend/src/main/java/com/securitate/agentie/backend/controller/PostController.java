@@ -43,4 +43,9 @@ public class PostController {
     public ResponseEntity<?> getPosts(@AuthenticationPrincipal User adminCreator) {
         return ResponseEntity.ok(postService.getPosts(adminCreator));
     }
+
+    @GetMapping("/my-assigned-workpoints")
+    public ResponseEntity<?> getMyAssignedWorkpoints(@AuthenticationPrincipal User paznic) {
+        return ResponseEntity.ok(postService.getMyAssignedWorkpoints(paznic));
+    }
 }
