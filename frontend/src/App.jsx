@@ -374,11 +374,21 @@ export default function App() {
           </ProtectedRoute>
         } />
 
+        <Route
+        path="/proces-verbal/nou"
+        element={
+            <ProtectedRoute user={currentUser} allowedRoles={["PAZNIC", "ADMINISTRATOR"]}>
+            <ProcesVerbal />
+            </ProtectedRoute>
+        }
+        />
+
         <Route path="/proces-verbal/:pontajId" element={
-          <ProtectedRoute user={currentUser} allowedRoles={['PAZNIC', 'ADMINISTRATOR']}>
-            <ProcesVerbal />
-          </ProtectedRoute>
-        } />
+            <ProtectedRoute user={currentUser} allowedRoles={["PAZNIC", "ADMINISTRATOR"]}>
+            <ProcesVerbal />
+            </ProtectedRoute>
+        }
+        />
 
         <Route path="/proces-verbal-predare/:pontajId" element={
           <ProtectedRoute user={currentUser} allowedRoles={['PAZNIC', 'ADMINISTRATOR']}>

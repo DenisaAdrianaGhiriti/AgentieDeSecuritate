@@ -4,10 +4,18 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.securitate.agentie.backend.model.Post;
 
 @Entity
 @Table(name = "pontaj")
 public class Pontaj {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    private Post post;
+
+    public Post getPost() { return post; }
+    public void setPost(Post post) { this.post = post; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -9,6 +9,7 @@ import com.securitate.agentie.backend.repository.UserRepository;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
+import com.securitate.agentie.backend.dto.RaportEvenimentListItem;
 
 import java.awt.Color;
 import java.io.FileOutputStream;
@@ -197,8 +198,19 @@ public class RaportEvenimentService {
      *
      * Pentru moment, îl las, dar ideal creezi un DTO list.
      */
-    public List<RaportEveniment> getDocumente() {
-        return raportEvenimentRepository.findAll();
+    public List<RaportEvenimentListItem> getDocumente() {
+        return raportEvenimentRepository.findAll().stream()
+                .map(r -> new RaportEvenimentListItem(
+                        r.getId(),
+                        r.getCaleStocarePDF(),
+                        r.getCreatedAt(),
+                        r.getNumarRaport(),
+                        r.getDataRaport(),
+                        r.getPunctDeLucru(),
+                        r.getNumePaznic(),   // dacă ai deja salvat textul
+                        r.getSocietate()     // dacă ai deja salvat textul (nume companie)
+                ))
+                .toList();
     }
 
     private static void requireNotBlank(String value, String message) {

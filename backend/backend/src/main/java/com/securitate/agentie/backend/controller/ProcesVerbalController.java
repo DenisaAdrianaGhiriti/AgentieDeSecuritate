@@ -19,31 +19,38 @@ public class ProcesVerbalController {
     }
 
     /**
-     * Echivalentul rutei:
-     * POST /api/proces-verbal/:pontajId
+     * POST /api/proces-verbal/{pontajId}
      * Autorizare: Paznic, Administrator
      */
     @PostMapping("/{pontajId}")
     public ResponseEntity<?> createProcesVerbal(
             @PathVariable Long pontajId,
             @RequestBody CreateProcesVerbalRequest request,
-            @AuthenticationPrincipal User paznic) {
-
+            @AuthenticationPrincipal User paznic
+    ) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     procesVerbalService.createProcesVerbal(pontajId, request, paznic)
             );
+
         } catch (IllegalArgumentException e) {
-            // Ex: Pontajul nu a fost găsit
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            // ex: pontajId invalid / pontaj inexistent / request invalid
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+        } catch (IllegalStateException e) {
+            // ex: beneficiar fără nume firmă în profil, pontaj fără beneficiar, pontaj fără post etc.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
         } catch (SecurityException e) {
-            // Ex: Paznicul nu are dreptul pe acest pontaj
+            // ex: paznicul nu are drept pe acest pontaj
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+
         } catch (Exception e) {
-            // Orice altă eroare (ex: generare PDF eșuată)
+            // orice altă eroare (ex: generare PDF eșuată)
             System.err.println("Eroare la crearea procesului verbal: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Eroare de server: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Eroare de server: " + e.getMessage());
         }
     }
 }

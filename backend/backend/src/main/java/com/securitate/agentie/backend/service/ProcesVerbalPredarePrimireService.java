@@ -14,6 +14,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.Rectangle;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.securitate.agentie.backend.dto.ProcesVerbalPredarePrimireListItem;
 
 import java.awt.Color;
 import java.io.FileOutputStream;
@@ -145,8 +146,18 @@ public class ProcesVerbalPredarePrimireService {
 //    }
 
     // Păstrează getDocumente() pentru listing, dacă este necesar
-    public List<ProcesVerbalPredarePrimire> getDocumente() {
-        return pvprRepository.findAll();
+    public List<ProcesVerbalPredarePrimireListItem> getDocumente() {
+        return pvprRepository.findAll().stream()
+                .map(pv -> new ProcesVerbalPredarePrimireListItem(
+                        pv.getId(),
+                        pv.getCaleStocarePDF(),
+                        pv.getCreatedAt(),
+                        pv.getDataIncheierii(),
+                        pv.getReprezentantBeneficiar(),
+                        pv.getNumeReprezentantPrimire()
+                ))
+                .toList();
     }
+
 
 }

@@ -54,6 +54,9 @@ public class SecurityConfig {
                         // ✅ Auth public
                         .requestMatchers(antMatcher("/api/auth/**")).permitAll()
 
+                        // ✅ PDF / fișiere statice (link <a href> fără JWT)
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/uploads/**")).permitAll()
+
                         // =========================================================
                         // ✅ USERS
                         // =========================================================
@@ -141,6 +144,8 @@ public class SecurityConfig {
                         // =========================================================
                         // ✅ PROCESE / RAPOARTE
                         // =========================================================
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/api/proces-verbal/documente"))
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
                         .requestMatchers(antMatcher("/api/proces-verbal/**"))
                         .hasAnyAuthority("ROLE_PAZNIC", "PAZNIC", "ROLE_ADMINISTRATOR", "ADMINISTRATOR")
 
